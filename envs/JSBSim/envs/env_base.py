@@ -262,3 +262,28 @@ class BaseEnv(gymnasium.Env):
         for agent_id in (self.ego_ids + self.enm_ids)[self.num_agents:]:
             unpack_data[agent_id] = None
         return unpack_data
+# 这是一个名为BaseEnv的类，它是一个RL环境，用于将JSBSim飞行动力学模块封装为一个可用于强化学习的环境。
+# 该类继承自gymnasium.Env类，并实现了OpenAI Gym环境接口。
+# 该类的主要属性和方法包括：
+# 属性：
+# - metadata: 环境的元数据，包括支持的渲染模式。
+# - num_agents: 环境中代理(agent)的数量。
+# - observation_space: 观测空间，描述了代理观测的状态。
+# - action_space: 动作空间，描述了代理可以执行的动作。
+# - agents: 代理字典，包含环境中的所有飞行器模拟器。
+# - time_interval: 代理交互步骤之间的时间间隔。
+# 方法：
+# - load: 加载任务和飞行器模拟器。
+# - load_task: 加载任务，创建一个BaseTask对象。
+# - load_simulator: 加载飞行器模拟器，创建AircraftSimulator对象，并将其存储在字典_jsbsims中。
+# - add_temp_simulator: 添加临时模拟器。
+# - reset: 重置环境的状态，并返回初始观测。
+# - step: 执行环境的动力学模拟，接受一个动作作为输入，并返回观测、奖励、终止信号和其他信息。
+# - get_obs: 返回所有代理的观测信息。
+# - get_state: 返回全局状态。
+# - close: 清理环境的对象。
+# - render: 渲染环境，支持输出为txt文件。
+# - seed: 设置环境的随机数种子。
+# - _pack: 将分离的键-值字典打包为分组的np.ndarray。
+# - _unpack: 将分组的np.ndarray解包为分离的键-值字典。
+# 需要注意的是，该类依赖其他模块和类，如AircraftSimulator、BaseSimulator、BaseTask等，这些模块和类在代码中的相对路径已经给出。

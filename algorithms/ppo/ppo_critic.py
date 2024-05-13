@@ -5,6 +5,12 @@ from ..utils.mlp import MLPBase, MLPLayer
 from ..utils.gru import GRULayer
 from ..utils.utils import check
 
+ # "ppo_critic.py":
+ #   - 这个文件实现了PPO算法中的值函数网络，名为`PPOCritic`。
+ #   - `PPOCritic`类继承自`nn.Module`，是一个神经网络模型。
+ #   - 它定义了值函数网络的结构和前向传播方法。
+ #   - 值函数网络用于估计给定状态的状态值，即预测该状态下获得的累积奖励的期望。
+ #   - `PPOCritic`类还管理了值函数网络的配置参数，如隐藏层大小、激活函数类型等。
 
 class PPOCritic(nn.Module):
     def __init__(self, args, obs_space, device=torch.device("cpu")):

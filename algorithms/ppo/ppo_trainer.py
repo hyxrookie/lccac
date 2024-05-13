@@ -6,6 +6,12 @@ from ..utils.buffer import ReplayBuffer
 from ..utils.utils import check, get_gard_norm
 
 
+# "ppo_trainer.py":
+#    - 这个文件包含了PPO算法的训练器（Trainer）类，名为`PPOTrainer`。
+#    - `PPOTrainer`类负责实现PPO算法的训练过程。
+#    - 它定义了PPO算法中的各种配置参数，如PPO迭代次数、剪切参数、值函数损失的系数等。
+#    - `PPOTrainer`类管理了PPO策略（Policy）对象、回放缓冲区等实用工具。
+#    - 其主要功能是通过与环境交互、采集数据、计算损失函数并更新策略网络和值函数网络来进行PPO算法的训练。
 class PPOTrainer():
     def __init__(self, args, device=torch.device("cpu")):
 
@@ -75,6 +81,9 @@ class PPOTrainer():
         return policy_loss, value_loss, policy_entropy_loss, ratio, actor_grad_norm, critic_grad_norm
 
     def train(self, policy: PPOPolicy, buffer: Union[ReplayBuffer, List[ReplayBuffer]]):
+        #执行整个PPO算法的训练过程。它接受一个`PPOPolicy`对象和一个回放缓冲区（`ReplayBuffer`）作为输入。
+        #在`train`方法中，首先初始化训练信息（`train_info`）的各个字段。
+        #然后，根据配置参数进行PPO算法的多次迭代。
         train_info = {}
         train_info['value_loss'] = 0
         train_info['policy_loss'] = 0
@@ -107,3 +116,24 @@ class PPOTrainer():
             train_info[k] /= num_updates
 
         return train_info
+
+# 1. `PPOTrainer`类的构造函数`__init__`接受参数`args`和`device`，其中`args`包含了PPO算法的配置参数，
+# `device`表示所使用的设备（默认为CPU）。
+# 2. `PPOTrainer`类中定义了PPO算法的各种配置参数，包括PPO迭代次数、剪切参数、值函数损失的系数等。
+# 3. `ppo_update`方法是PPO算法的核心更新函数。它接受一个`PPOPolicy`对象和采样数据`sample`作为输入。
+# `sample`包含了观测数据、动作数据、回报数据等。
+# 4. 在`ppo_update`方法中，首先将采样数据转换为PyTorch张量，并将其移动到指定的设备上。
+# 5. 然后，通过调用`policy.evaluate_actions`方法计算当前策略网络在给定观测数据和动作数据下的动作对数概率、值函数和熵。
+# 6. 接下来，根据PPO算法的损失函数公式，计算策略损失（policy_loss）、值函数损失（value_loss）和策略熵损失（policy_entropy_loss）。
+# 7. 将这些损失函数组合成总体损失函数，并根据总体损失函数进行梯度更新。
+# 8. 如果设置了`use_max_grad_norm`参数为True，则对梯度进行裁剪以防止梯度爆炸。
+# 9. 最后，返回策略损失、值函数损失、策略熵损失、动作概率比率、演员梯度范数和评论家梯度范数等信息。
+
+# 10. `train`方法用于执行整个PPO算法的训练过程。它接受一个`PPOPolicy`对象和一个回放缓冲区（`ReplayBuffer`）作为输入。
+# 11. 在`train`方法中，首先初始化训练信息（`train_info`）的各个字段。
+# 12. 然后，根据配置参数进行PPO算法的多次迭代。
+# 13. 如果使用循环策略（`use_recurrent_policy`为True），则调用`ReplayBuffer.recurrent_generator`方法生成循环数据的生成器。
+# 14. 对于每个生成的数据样本，调用`ppo_update`方法进行PPO算法的更新，并累加各项训练信息。
+# 15. 最后，将训练信息除以总更新次数，得到平均值，并返回该训练信息。
+# 总体而言，这个文件定义了PPO算法的训练器类`PPOTrainer`，包括PPO算法的配置参数、核心更新函数和训练过程。
+# 通过与环境交互、采集数据、计算损失函数并更新策略网络和值函数网络来进行PPO算法的训练。

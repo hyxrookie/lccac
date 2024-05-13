@@ -6,6 +6,13 @@ from ..utils.gru import GRULayer
 from ..utils.act import ACTLayer
 from ..utils.utils import check
 
+ # "ppo_actor.py":
+ #   - 这个文件实现了PPO算法中的策略网络，名为`PPOActor`。
+ #   - `PPOActor`类继承自`nn.Module`，是一个神经网络模型。
+ #   - 它定义了策略网络的结构和前向传播方法。
+ #   - 策略网络用于根据给定状态生成动作，并计算生成每个动作的概率和对数概率。
+ #   - `PPOActor`类还管理了策略网络的配置参数，如学习率、隐藏层大小等。
+ #   - 在特定情况下，策略网络还使用先验知识来控制生成动作的行为。
 
 class PPOActor(nn.Module):
     def __init__(self, args, obs_space, act_space, device=torch.device("cpu")):

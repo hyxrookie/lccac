@@ -3,7 +3,7 @@ import torch
 import logging
 import numpy as np
 from typing import List
-from .base_runner import Runner, ReplayBuffer
+from runner.base_runner import Runner, ReplayBuffer
 
 
 def _t2n(x):

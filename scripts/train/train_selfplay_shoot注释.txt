@@ -1,0 +1,55 @@
+这个.sh文件是一个用于训练飞机近距离空战狗斗模型的脚本。下面是对每个命令和参数的分析：
+
+1. 设置变量：
+   - env="SingleCombat"：设置环境变量为"SingleCombat"，表示使用单人对抗环境。
+   - scenario="1v1/ShootMissile/HierarchySelfplay"：设置场景变量为"1v1/ShootMissile/HierarchySelfplay"，表示使用1对1的导弹射击和层级自我对弈的场景。
+   - algo="ppo"：设置算法变量为"ppo"，表示使用PPO算法。
+   - exp="v1"：设置实验变量为"v1"，表示使用版本1。
+   - seed=1：设置种子变量为1，用于随机数生成的种子。
+
+2. 打印变量：
+   - echo "env is ${env}, scenario is ${scenario}, algo is ${algo}, exp is ${exp}, seed is ${seed}"：打印环境变量、场景变量、算法变量、实验变量和种子变量的值。
+
+3. 调用Python脚本进行训练：
+   - CUDA_VISIBLE_DEVICES=1 python train/train_jsbsim.py：使用CUDA设备1调用Python脚本train_jsbsim.py进行训练。
+   - 该Python脚本接受多个命令行参数，用于配置训练过程的各个参数。
+
+以下是传递给train_jsbsim.py脚本的参数列表：
+- --env-name ${env}：指定训练环境的名称为之前设置的env变量的值。
+- --algorithm-name ${algo}：指定使用的算法名称为之前设置的algo变量的值。
+- --scenario-name ${scenario}：指定使用的场景名称为之前设置的scenario变量的值。
+- --experiment-name ${exp}：指定实验的名称为之前设置的exp变量的值。
+- --seed ${seed}：指定随机数生成的种子为之前设置的seed变量的值。
+- --n-training-threads 1：指定训练线程的数量为1。
+- --n-rollout-threads 32：指定回合线程的数量为32。
+- --cuda：启用CUDA加速。
+- --log-interval 1：指定训练日志输出的间隔为1。
+- --save-interval 1：指定模型保存的间隔为1。
+- --use-selfplay：启用自我对弈。
+- --selfplay-algorithm "fsp"：指定自我对弈算法为"fsp"。
+- --n-choose-opponents 1：指定每个训练步骤选择的对手数量为1。
+- --use-eval：启用评估。
+- --n-eval-rollout-threads 1：指定评估回合线程的数量为1。
+- --eval-interval 1：指定评估的间隔为1。
+- --eval-episodes 1：指定每次评估的回合数为1。
+- --num-mini-batch 5：指定每次更新的小批量样本数量为5。
+- --buffer-size 3000：指定经验缓冲区的大小为3000。
+- --num-env-steps 1e8：指定训练的总环境步数为1e8。
+- --lr 3e-4：指定学习率为3e-4。
+- --gamma 0.99：指定折扣因子为0.99。
+- --ppo-epoch 4：指定PPO算法的迭代次数为4。
+- --clip-params 0.2：指定参数的截断范围为0.2。
+- --max-grad-norm 2：指定梯度的最大范数为2。
+- --entropy-coef 1e-3：指定熵系数为1e-3。
+- --hidden-size "128 128"：指定隐藏层的大小为两个128维的隐藏
+- --act-hidden-size "128 128"：指定动作网络的隐藏层大小为两个128维的隐藏层。
+- --recurrent-hidden-size 128：指定循环网络的隐藏层大小为128维。
+- --recurrent-hidden-layers 1：指定循环网络的隐藏层数为1。
+- --data-chunk-length 8：指定数据块的长度为8。
+- --user-name "jyh"：指定用户名称为"jyh"。
+- --use-wandb：启用WandB（Weights & Biases）用于训练过程的跟踪和可视化。
+- --wandb-name "thu_jsbsim"：指定WandB项目的名称为"thu_jsbsim"。
+- --use-prior：启用优先经验回放。
+
+综上所述，该.sh文件通过调用Python脚本train_jsbsim.py，使用PPO算法对飞机近距离空战狗斗模型进行训练。
+脚本中的各个参数用于配置训练过程的相关设置，包括环境、算法、场景、实验、随机种子、训练参数、模型架构等。

@@ -6,7 +6,7 @@ import numpy as np
 import torch
 
 from algorithms.utils.buffer import SharedReplayBuffer
-from .base_runner import Runner
+from runner.base_runner import Runner
 
 
 def _t2n(x):

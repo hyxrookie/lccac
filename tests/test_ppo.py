@@ -30,6 +30,9 @@ class TestPPO:
         ], [    # batch_size
             1, 5
         ])))
+    # 这个方法测试PPOActor类的功能。它使用pytest.mark.parametrize装饰器来为测试提供不同的参数组合，
+    # 包括观察空间（obs_space）、动作空间（act_space）和批处理大小（batch_size）。然后，它创建一个PPOActor实例，
+    # 并使用随机生成的观察值、初始RNN状态和掩码来调用该实例。最后，它验证返回的动作、动作对数概率和RNN状态的形状是否正确。
     def test_ppo_actor(self, obs_space, act_space, batch_size):
         actor = PPOActor(get_config().parse_args(args=''), obs_space, act_space, device=torch.device("cpu"))
 

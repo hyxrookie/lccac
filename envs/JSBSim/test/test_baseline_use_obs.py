@@ -156,3 +156,4 @@ def test_maneuver():
 
 if __name__ == '__main__':
     test_maneuver()
+    #测试完成后保存到同目录下的JSBSimRecording.txt.acmi
