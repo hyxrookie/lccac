@@ -14,7 +14,6 @@ def _t2n(x):
 
 
 class ShareJSBSimRunner(Runner):
-
     def load(self):
         self.obs_space = self.envs.observation_space
         self.share_obs_space = self.envs.share_observation_space
@@ -65,6 +64,7 @@ class ShareJSBSimRunner(Runner):
             self.restore()
 
     def run(self):
+        print("share_jsbsim_runner run")
         self.warmup()
 
         start = time.time()

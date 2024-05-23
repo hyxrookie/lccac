@@ -15,7 +15,7 @@ class SelfplayJSBSimRunner(JSBSimRunner):
     def load(self):
         self.use_selfplay = self.all_args.use_selfplay 
         assert self.use_selfplay == True, "Only selfplay can use SelfplayRunner"
-        self.obs_space = self.envs.observation_space
+        self.obs_space = self.envs.observation_space #经过层层分层，最后这里的observation_space由任务，比如singlecombat_task的load_observation_space完成加载，并赋值过来
         self.act_space = self.envs.action_space
         self.num_agents = self.envs.num_agents
         self.num_opponents = self.all_args.n_choose_opponents
@@ -30,7 +30,7 @@ class SelfplayJSBSimRunner(JSBSimRunner):
             from algorithms.ppo.ppo_policy import PPOPolicy as Policy
         else:
             raise NotImplementedError
-        self.policy = Policy(self.all_args, self.obs_space, self.act_space, device=self.device)
+        self.policy = Policy(self.all_args, self.obs_space, self.act_space, device=self.device) #初始化训练器与策略网络实例
         self.trainer = Trainer(self.all_args, device=self.device)
 
         # buffer

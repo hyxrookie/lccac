@@ -156,12 +156,12 @@ def main(args):
     if all_args.env_name == "MultipleCombat":
         runner = ShareJSBSimRunner(config)
     else:
-        if all_args.use_selfplay:
+        if all_args.use_selfplay: #是否使用自博弈算法，选中运行器
             from runner.selfplay_jsbsim_runner import SelfplayJSBSimRunner as Runner
         else:
             from runner.jsbsim_runner import JSBSimRunner as Runner
         runner = Runner(config)
-    try:
+    try:#在run中运行训练,
         runner.run()
     except BaseException:
         traceback.print_exc()

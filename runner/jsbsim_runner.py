@@ -13,7 +13,7 @@ def _t2n(x):
 class JSBSimRunner(Runner):
 
     def load(self):
-        self.obs_space = self.envs.observation_space
+        self.obs_space = self.envs.observation_space #envs在父类Runner中已经被定义
         self.act_space = self.envs.action_space
         self.num_agents = self.envs.num_agents
         self.use_selfplay = self.all_args.use_selfplay
@@ -34,6 +34,7 @@ class JSBSimRunner(Runner):
             self.restore()
 
     def run(self):
+        print("jsbsim_runner run")
         self.warmup()
 
         start = time.time()

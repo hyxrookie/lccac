@@ -12,7 +12,7 @@ def _t2n(x):
 
 
 class Runner(object):
-    def __init__(self, config):
+    def __init__(self, config): #__init__是python的构造函数
 
         self.all_args = config['all_args']
         self.envs = config['envs']
@@ -70,6 +70,7 @@ class Runner(object):
             self.restore()
 
     def run(self):
+        print("base_runner run")
         raise NotImplementedError
 
     def warmup(self):

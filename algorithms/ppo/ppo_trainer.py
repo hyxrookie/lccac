@@ -30,7 +30,7 @@ class PPOTrainer():
         self.use_recurrent_policy = args.use_recurrent_policy
         self.data_chunk_length = args.data_chunk_length
 
-    def ppo_update(self, policy: PPOPolicy, sample):
+    def ppo_update(self, policy: PPOPolicy, sample):#核心部分。每次更新策略时都会调用这个方法。
 
         obs_batch, actions_batch, masks_batch, old_action_log_probs_batch, advantages_batch, \
             returns_batch, value_preds_batch, rnn_states_actor_batch, rnn_states_critic_batch = sample
@@ -40,14 +40,14 @@ class PPOTrainer():
         returns_batch = check(returns_batch).to(**self.tpdv)
         value_preds_batch = check(value_preds_batch).to(**self.tpdv)
 
-        # Reshape to do in a single forward pass for all steps
+        # Reshape to do in a single forward pass for all steps 调用策略的evaluate_actions方法计算动作的概率、值函数预测和策略熵
         values, action_log_probs, dist_entropy = policy.evaluate_actions(obs_batch,
                                                                          rnn_states_actor_batch,
                                                                          rnn_states_critic_batch,
                                                                          actions_batch,
                                                                          masks_batch)
 
-        # Obtain the loss function
+        # Obtain the loss function 损失函数计算
         ratio = torch.exp(action_log_probs - old_action_log_probs_batch)
         surr1 = ratio * advantages_batch
         surr2 = torch.clamp(ratio, 1.0 - self.clip_param, 1.0 + self.clip_param) * advantages_batch
@@ -67,7 +67,7 @@ class PPOTrainer():
 
         loss = policy_loss + value_loss * self.value_loss_coef + policy_entropy_loss * self.entropy_coef
 
-        # Optimize the loss function
+        # Optimize the loss function 反向传播和优化
         policy.optimizer.zero_grad()
         loss.backward()
         if self.use_max_grad_norm:
@@ -81,9 +81,8 @@ class PPOTrainer():
         return policy_loss, value_loss, policy_entropy_loss, ratio, actor_grad_norm, critic_grad_norm
 
     def train(self, policy: PPOPolicy, buffer: Union[ReplayBuffer, List[ReplayBuffer]]):
-        #执行整个PPO算法的训练过程。它接受一个`PPOPolicy`对象和一个回放缓冲区（`ReplayBuffer`）作为输入。
-        #在`train`方法中，首先初始化训练信息（`train_info`）的各个字段。
-        #然后，根据配置参数进行PPO算法的多次迭代。
+       #PPO算法的训练主循环。它负责从回放缓冲区中获取训练数据样本，并调用ppo_update方法进行参数更新
+       #初始化一个字典train_info，用于存储训练过程中的各种损失和梯度信息。
         train_info = {}
         train_info['value_loss'] = 0
         train_info['policy_loss'] = 0
@@ -92,29 +91,31 @@ class PPOTrainer():
         train_info['critic_grad_norm'] = 0
         train_info['ratio'] = 0
 
-        for _ in range(self.ppo_epoch):
+        for _ in range(self.ppo_epoch):#进行多次PPO迭代（次数由ppo_epoch决定）
             if self.use_recurrent_policy:
+                #如果使用循环策略（recurrent policy），则从缓冲区中生成数据样本。
+                # 这里使用了ReplayBuffer类的recurrent_generator方法，按照num_mini_batch和data_chunk_length生成小批量数据。
                 data_generator = ReplayBuffer.recurrent_generator(buffer, self.num_mini_batch, self.data_chunk_length)
             else:
                 raise NotImplementedError
 
-            for sample in data_generator:
+            for sample in data_generator:#对每一个生成的数据样本，调用ppo_update方法进行PPO更新。ppo_update方法返回各种损失值和梯度信息。
 
                 policy_loss, value_loss, policy_entropy_loss, ratio, \
                     actor_grad_norm, critic_grad_norm = self.ppo_update(policy, sample)
-
+                #将每次更新返回的损失值和梯度信息累加到train_info字典中。
                 train_info['value_loss'] += value_loss.item()
                 train_info['policy_loss'] += policy_loss.item()
                 train_info['policy_entropy_loss'] += policy_entropy_loss.item()
                 train_info['actor_grad_norm'] += actor_grad_norm
                 train_info['critic_grad_norm'] += critic_grad_norm
                 train_info['ratio'] += ratio.mean().item()
-
+        #计算总的更新次数，即ppo_epoch和num_mini_batch的乘积。
         num_updates = self.ppo_epoch * self.num_mini_batch
-
+        #将累加的损失值和梯度信息除以总的更新次数，以获得平均值。
         for k in train_info.keys():
             train_info[k] /= num_updates
-
+        #返回包含平均损失和梯度信息的字典train_info。
         return train_info
 
 # 1. `PPOTrainer`类的构造函数`__init__`接受参数`args`和`device`，其中`args`包含了PPO算法的配置参数，

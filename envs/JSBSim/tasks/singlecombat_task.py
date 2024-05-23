@@ -13,7 +13,7 @@ from ..model.baseline_actor import BaselineActor
 
 class SingleCombatTask(BaseTask):
     def __init__(self, config):
-        super().__init__(config)
+        super().__init__(config) #里面父类的某些初始化方法被子类给重新，调用子类的方法，完成动作空间，观测空间的加载
         self.use_baseline = getattr(self.config, 'use_baseline', False)
         self.use_artillery = getattr(self.config, 'use_artillery', False)
         if self.use_baseline:
@@ -72,11 +72,12 @@ class SingleCombatTask(BaseTask):
         ]
 
     def load_observation_space(self):
-        self.observation_space = spaces.Box(low=-10, high=10., shape=(15,))
+        self.observation_space = spaces.Box(low=-10, high=10., shape=(15,)) #产生15维的观测空间
+        #
 
     def load_action_space(self):
         # aileron, elevator, rudder, throttle
-        self.action_space = spaces.MultiDiscrete([41, 41, 41, 30])
+        self.action_space = spaces.MultiDiscrete([41, 41, 41, 30]) #四维度离散的动作空间
 
     def get_obs(self, env, agent_id):
         """
@@ -181,6 +182,7 @@ class SingleCombatTask(BaseTask):
                         #     print(f"AO: {AO * 180 / np.pi}, {_orientation_fn(AO)}, dis:{R/1000}, {_distance_fn(R/1000)}")
 
     def get_reward(self, env, agent_id, info=...):
+        #调用父类的get_reward方法，对本类的奖励函数直接累加，作为奖励
         if self._agent_die_flag.get(agent_id, False):
             return 0.0, info
         else:
