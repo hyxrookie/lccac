@@ -20,9 +20,9 @@ class SingleCombatTask(BaseTask):
             self.baseline_agent = self.load_agent(self.config.baseline_type)
 
         self.reward_functions = [
-            AltitudeReward(self.config),
-            PostureReward(self.config),
-            EventDrivenReward(self.config)
+            AltitudeReward(self.config), #高度奖励
+            PostureReward(self.config), #姿态奖励
+            EventDrivenReward(self.config) #事件驱动奖励
         ]
 
         self.termination_conditions = [

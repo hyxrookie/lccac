@@ -83,11 +83,11 @@ class Runner(object):
         raise NotImplementedError
 
     @torch.no_grad()
-    def compute(self):
+    def compute(self): #计算回报值（returns）并将其存储在回放缓冲区中
         self.policy.prep_rollout()
         next_values = self.policy.get_values(np.concatenate(self.buffer.obs[-1]),
                                              np.concatenate(self.buffer.rnn_states_critic[-1]),
-                                             np.concatenate(self.buffer.masks[-1]))
+                                             np.concatenate(self.buffer.masks[-1])) #这个函数用于根据给定的观测值和RNN状态获取值函数估计值。
         next_values = np.array(np.split(_t2n(next_values), self.buffer.n_rollout_threads))
         self.buffer.compute_returns(next_values)
 

@@ -204,7 +204,7 @@ def main():
             from runner.selfplay_jsbsim_runner import SelfplayJSBSimRunner as Runner
         else:
             from runner.jsbsim_runner import JSBSimRunner as Runner
-        runner = Runner(config) #
+        runner = Runner(config)
     try:
         runner.run() #注意这里的run是jsbsim_runner.py 中的run函数
     except BaseException:

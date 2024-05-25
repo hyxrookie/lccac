@@ -106,6 +106,7 @@ class BaseEnv(gymnasium.Env):
         return self._pack(obs)
 
     def step(self, action: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray, dict]:
+        #运行环境动态的一个时间步。它接受一个动作作为输入，并返回代理的观察、奖励、完成标志和辅助信息
         """Run one timestep of the environment's dynamics. When end of
         episode is reached, you are responsible for calling `reset()`
         to reset this environment's observation. Accepts an action and
