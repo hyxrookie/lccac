@@ -56,10 +56,14 @@ class BaseRewardFunction(ABC):
         Returns:
             [type]: [description]
         """
-        reward = new_reward * self.reward_scale
-        if self.is_potential:
+        reward = new_reward * self.reward_scale #将新的奖励值乘以 self.reward_scale，得到经过缩放的奖励值 reward。
+        if self.is_potential: #进行潜力奖励调整
             reward, self.pre_rewards[agent_id] = reward - self.pre_rewards[agent_id], reward
+            #将 reward 减去之前保存的该代理者的上一个奖励值 self.pre_rewards[agent_id]，并将结果赋值给 reward。
+            #更新 self.pre_rewards[agent_id] 为当前的 reward。
         self.reward_trajectory[agent_id].append([reward, *render_items])
+        # 将奖励值reward以及其他需要渲染的项render_items添加到
+        # self.reward_trajectory[agent_id]列表中。这个列表用于记录代理者的奖励轨迹。
         return reward
 
     def get_reward_trajectory(self):

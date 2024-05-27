@@ -63,17 +63,22 @@ def get_AO_TA_R(ego_feature, enm_feature, return_side=False):
     Returns:
         (tuple): ego_AO, ego_TA, R
     """
-    ego_x, ego_y, ego_z, ego_vx, ego_vy, ego_vz = ego_feature
-    ego_v = np.linalg.norm([ego_vx, ego_vy, ego_vz])
-    enm_x, enm_y, enm_z, enm_vx, enm_vy, enm_vz = enm_feature
-    enm_v = np.linalg.norm([enm_vx, enm_vy, enm_vz])
-    delta_x, delta_y, delta_z = enm_x - ego_x, enm_y - ego_y, enm_z - ego_z
-    R = np.linalg.norm([delta_x, delta_y, delta_z])
+    ego_x, ego_y, ego_z, ego_vx, ego_vy, ego_vz = ego_feature #获得己方飞机的速度与坐标
+    ego_v = np.linalg.norm([ego_vx, ego_vy, ego_vz]) #计算己方速度矢量的绝对值
+    #计算向量或矩阵的范数（norm）如果输入是一个一维数组（向量），则计算其欧几里德范数（2-范数），即向量元素平方和的平方根。
+    # 如果输入是一个二维数组（矩阵），则默认计算其 Frobenius 范数，即矩阵元素的平方和的平方根。
+    enm_x, enm_y, enm_z, enm_vx, enm_vy, enm_vz = enm_feature#获得对方飞机的速度与坐标
+    enm_v = np.linalg.norm([enm_vx, enm_vy, enm_vz]) #计算己方速度矢量的绝对值
 
-    proj_dist = delta_x * ego_vx + delta_y * ego_vy + delta_z * ego_vz
-    ego_AO = np.arccos(np.clip(proj_dist / (R * ego_v + 1e-8), -1, 1))
+    delta_x, delta_y, delta_z = enm_x - ego_x, enm_y - ego_y, enm_z - ego_z #计算相对坐标  是我机到敌方距离的相对矢量，或者视线
+    R = np.linalg.norm([delta_x, delta_y, delta_z]) #计算直线距离
+
+
+    proj_dist = delta_x * ego_vx + delta_y * ego_vy + delta_z * ego_vz # 两个三维向量的点积，我机速度矢量与我敌视线矢量
+    ego_AO = np.arccos(np.clip(proj_dist / (R * ego_v + 1e-8), -1, 1)) #目标方位角
+    #为什么要加上1e-8，是为了防止分母为0，或者特别小，从而避免除0错误或是整个分式值特别大，导致不稳定训练
     proj_dist = delta_x * enm_vx + delta_y * enm_vy + delta_z * enm_vz
-    ego_TA = np.arccos(np.clip(proj_dist / (R * enm_v + 1e-8), -1, 1))
+    ego_TA = np.arccos(np.clip(proj_dist / (R * enm_v + 1e-8), -1, 1)) #目标进入角
 
     if not return_side:
         return ego_AO, ego_TA, R

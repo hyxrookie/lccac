@@ -28,18 +28,19 @@ class MissilePostureReward(BaseRewardFunction):
         """
         reward = 0
         missile_sim = env.agents[agent_id].check_missile_warning()
-        if missile_sim is not None:
+        if missile_sim is not None:#如果接收到导弹警告
             missile_v = missile_sim.get_velocity()
             aircraft_v = env.agents[agent_id].get_velocity()
             if self.previous_missile_v is None:
                 self.previous_missile_v = missile_v
-            v_decrease = (np.linalg.norm(self.previous_missile_v) - np.linalg.norm(missile_v)) / 340 * self.reward_scale
-            angle = np.dot(missile_v, aircraft_v) / (np.linalg.norm(missile_v) * np.linalg.norm(aircraft_v))
-            if angle < 0:
+            v_decrease = (np.linalg.norm(self.previous_missile_v) - np.linalg.norm(missile_v)) / 340 * self.reward_scale #导弹的速度衰减率
+            angle = np.dot(missile_v, aircraft_v) / (np.linalg.norm(missile_v) * np.linalg.norm(aircraft_v)) #angle是导弹速度向量与飞机（我方？）速度矢量的夹角θ的余弦
+            #dot是 NumPy 库中的一个函数，用于计算两个向量的点积
+            if angle < 0:#夹角【90.180】
                 reward = angle / (max(v_decrease, 0) + 1)
-            else:
+            else:#夹角【0，90】
                 reward = angle * max(v_decrease, 0)
-        else:
+        else:#如果没有导弹警告
             self.previous_missile_v = None
             reward = 0
         self.reward_trajectory[agent_id].append([reward])

@@ -25,7 +25,7 @@ class SingleCombatTask(BaseTask):
             EventDrivenReward(self.config) #事件驱动奖励
         ]
 
-        self.termination_conditions = [
+        self.termination_conditions = [#终止条件
             LowAltitude(self.config),
             ExtremeState(self.config),
             Overload(self.config),
