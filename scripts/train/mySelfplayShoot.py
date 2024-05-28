@@ -10,19 +10,11 @@ import logging
 import numpy as np
 from pathlib import Path
 import setproctitle
-
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))))
 from config import get_config
 from runner.share_jsbsim_runner import ShareJSBSimRunner
 from envs.JSBSim.envs import SingleCombatEnv, SingleControlEnv, MultipleCombatEnv
 from envs.env_wrappers import SubprocVecEnv, DummyVecEnv, ShareSubprocVecEnv, ShareDummyVecEnv
-
-# Bash 脚本中的参数
-env = "SingleCombat"
-scenario = "1v1/NoWeapon/Selfplay"
-algo = "ppo"
-exp = "v1"
-seed = 1
 
 def make_train_env(all_args):
     def get_env_fn(rank):
@@ -90,48 +82,12 @@ def parse_args(args, parser):
     return all_args
 
 
-def main():
+def main(args):
     parser = get_config()
 
     # 将 Bash 脚本中的参数传递给 Python 脚本
     # 将一系列命令行参数解析并存储到一个命名空间对象中，方便后续代码使用这些参数的数值
-    all_args = parse_args([
-        "--env-name", env,
-        "--algorithm-name", algo,
-        "--scenario-name", scenario,
-        "--experiment-name", exp,
-        "--seed", str(seed),
-        "--n-training-threads", "1",
-        "--n-rollout-threads", "32",
-        "--cuda",
-        "--log-interval", "1",
-        "--save-interval", "1",
-        "--use-selfplay",
-        "--selfplay-algorithm", "fsp",
-        "--n-choose-opponents", "1",
-        "--use-eval",
-        "--n-eval-rollout-threads", "1",
-        "--eval-interval", "1",
-        "--eval-episodes", "1",
-        "--num-mini-batch", "5",
-        "--buffer-size", "3000",
-        # "--num-env-steps", "100",
-        "--num-env-steps", "300000",
-        "--lr", "3e-4",
-        "--gamma", "0.99",
-        "--ppo-epoch", "4",
-        "--clip-params", "0.2",
-        "--max-grad-norm", "2",
-        "--entropy-coef", "1e-3",
-        "--hidden-size", "128 128",
-        "--act-hidden-size", "128 128",
-        "--recurrent-hidden-size", "128",
-        "--recurrent-hidden-layers", "1",
-        "--data-chunk-length", "8",
-        "--user-name", "jyh",
-        "--use-wandb",
-        "--wandb-name", "thu_jsbsim"
-    ], parser)
+    all_args = parse_args(args, parser)
 
     # seed
     np.random.seed(all_args.seed)
@@ -219,4 +175,39 @@ def main():
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format="%(message)s")
-    main()
+    main([
+        "--env-name", "SingleCombat",
+        "--algorithm-name", "ppo",
+        "--scenario-name", "1v1/ShootMissile/HierarchySelfplay",
+        "--experiment-name", "v1",
+        "--seed", "1",
+        "--n-training-threads", "1",
+        "--n-rollout-threads", "32",
+        "--cuda",
+        "--log-interval", "1",
+        "--save-interval", "1",
+        "--use-selfplay",
+        "--selfplay-algorithm", "fsp",
+        "--n-choose-opponents", "1",
+        "--use-eval",
+        "--n-eval-rollout-threads", "1",
+        "--eval-interval", "1",
+        "--eval-episodes", "1",
+        "--num-mini-batch", "5",
+        "--buffer-size", "3000",
+        "--num-env-steps", "1e8",
+        "--lr", "3e-4",
+        "--gamma", "0.99",
+        "--ppo-epoch", "4",
+        "--clip-params", "0.2",
+        "--max-grad-norm", "2",
+        "--entropy-coef", "1e-3",
+        "--hidden-size", "128 128",
+        "--act-hidden-size", "128 128",
+        "--recurrent-hidden-size", "128",
+        "--recurrent-hidden-layers", "1",
+        "--data-chunk-length", "8",
+        "--user-name", "cymcym",
+        "--use-wandb",
+        "--wandb-name", "cumtbcym-org"
+    ])
