@@ -28,11 +28,11 @@ render = True
 ego_policy_index = 'latest'
 enm_policy_index = 0
 episode_rewards = 0
-ego_run_dir = "../scripts/results/SingleCombat/1v1/NoWeapon/Selfplay/ppo/v1/wandb/run-20240504_182525-fsdr8czw/files"
-enm_run_dir = "../scripts/results/SingleCombat/1v1/NoWeapon/Selfplay/ppo/v1/wandb/run-20240504_182525-fsdr8czw/files"
+ego_run_dir = "../scripts/results/SingleCombat/1v1/ShootMissile/HierarchySelfplay/ppo/v1/wandb/run-20240529_154549-faeg7h0f/files"
+enm_run_dir = "../scripts/results/SingleCombat/1v1/ShootMissile/HierarchySelfplay/ppo/v1/wandb/run-20240529_154549-faeg7h0f/files"
 experiment_name = ego_run_dir.split('/')[-4]
 
-env = SingleCombatEnv("1v1/NoWeapon/Selfplay")
+env = SingleCombatEnv("1v1/ShootMissile/HierarchySelfplay")
 env.seed(0)
 args = Args()
 

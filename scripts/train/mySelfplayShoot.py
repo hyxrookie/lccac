@@ -195,7 +195,7 @@ if __name__ == "__main__":
         "--eval-episodes", "1",
         "--num-mini-batch", "5",
         "--buffer-size", "3000",
-        "--num-env-steps", "1e8",
+        "--num-env-steps", "300000",
         "--lr", "3e-4",
         "--gamma", "0.99",
         "--ppo-epoch", "4",
@@ -209,5 +209,6 @@ if __name__ == "__main__":
         "--data-chunk-length", "8",
         "--user-name", "cymcym",
         "--use-wandb",
-        "--wandb-name", "cumtbcym-org"
+        "--wandb-name", "cumtbcym-org",
+        "--use-prior"
     ])
