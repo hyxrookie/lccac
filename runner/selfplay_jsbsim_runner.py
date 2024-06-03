@@ -95,7 +95,7 @@ class SelfplayJSBSimRunner(JSBSimRunner):
                                 np.concatenate(self.opponent_masks[env_idx]))
             opponent_actions[env_idx] = np.array(np.split(_t2n(opponent_action), len(env_idx)))
             self.opponent_rnn_states[env_idx] = np.array(np.split(_t2n(opponent_rnn_states), len(env_idx)))
-        actions = np.concatenate((actions, opponent_actions), axis=1)
+        actions = np.concatenate((actions, opponent_actions), axis=1) #actions_shape(32,1,4) opponent_actions_shape(32,1,4) 在axis=1上合并，则shape(32,2,4)
 
         return values, actions, action_log_probs, rnn_states_actor, rnn_states_critic
 

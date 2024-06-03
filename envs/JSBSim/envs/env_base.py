@@ -105,7 +105,7 @@ class BaseEnv(gymnasium.Env):
         obs = self.get_obs()
         return self._pack(obs)
 
-    def step(self, action: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray, dict]:
+    def step(self, action: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray, dict]:#返回值类型是四元组，最后一个元素是字典类型，相当于Java中的map
         #运行环境动态的一个时间步。它接受一个动作作为输入，并返回代理的观察、奖励、完成标志和辅助信息
         """Run one timestep of the environment's dynamics. When end of
         episode is reached, you are responsible for calling `reset()`
@@ -122,6 +122,7 @@ class BaseEnv(gymnasium.Env):
                 dones: whether the episode has ended, in which case further step() calls are undefined
                 info: auxiliary information
         """
+        print("env_base step")#可注释掉
         self.current_step += 1
         info = {"current_step": self.current_step}
         # apply actions
@@ -135,7 +136,7 @@ class BaseEnv(gymnasium.Env):
                 sim.run()
             for sim in self._tempsims.values():
                 sim.run()
-        self.task.step(self)
+        self.task.step(self)#采取对应任务的step
 
         obs = self.get_obs()
 

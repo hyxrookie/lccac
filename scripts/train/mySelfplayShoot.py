@@ -38,11 +38,11 @@ def make_train_env(all_args):
             return ShareDummyVecEnv([get_env_fn(0)])
         else:
             return ShareSubprocVecEnv([get_env_fn(i) for i in range(all_args.n_rollout_threads)])
-    else:
-        if all_args.n_rollout_threads == 1:
+    else:#Singlecombat
+        if all_args.n_rollout_threads == 1:#单线程收集数据
             return DummyVecEnv([get_env_fn(0)])
-        else:
-            return SubprocVecEnv([get_env_fn(i) for i in range(all_args.n_rollout_threads)])
+        else:#多线程收集数据
+            return SubprocVecEnv([get_env_fn(i) for i in range(all_args.n_rollout_threads)])#创建多个
 
 
 def make_eval_env(all_args):

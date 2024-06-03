@@ -6,14 +6,14 @@ from typing import List
 from runner.base_runner import Runner, ReplayBuffer
 
 
-def _t2n(x):
+def _t2n(x):#将 PyTorch 张量（tensor）转换为 NumPy 数组
     return x.detach().cpu().numpy()
 
 
 class JSBSimRunner(Runner):
 
     def load(self):
-        self.obs_space = self.envs.observation_space #envs在父类Runner中已经被定义
+        self.obs_space = self.envs.observation_space  # envs在父类Runner中已经被定义
         self.act_space = self.envs.action_space
         self.num_agents = self.envs.num_agents
         self.use_selfplay = self.all_args.use_selfplay
@@ -32,31 +32,32 @@ class JSBSimRunner(Runner):
 
         if self.model_dir is not None:
             self.restore()
+
     # 环境信息: 获取观察空间、动作空间和智能体数量。
     # 策略和算法: 加载PPO策略和训练器。
     # 缓冲区: 初始化经验回放缓冲区。
     # 模型恢复: 如果有模型目录，加载已保存的模型。
 
-
     def run(self):
         print("jsbsim_runner run")
         self.warmup()
 
-        start = time.time()
-        self.total_num_steps = 0
+        start = time.time()  # 获取当前时间戳，用于后续计算训练时间。
+        self.total_num_steps = 0  # 将总步数 total_num_steps 初始化为 0。
+
+        # 每一个线程都会运行一个run，所以回合数就是每一个线程所分配到的缓冲区数目，作为自己episode数
         episodes = self.num_env_steps // self.buffer_size // self.n_rollout_threads
-        #//是整除运算符 回合数=环境总步数 / 缓冲区大小 / 总的线程数
+        # //是整除运算符 回合数 = 环境总步数 / 缓冲区大小 / 总的线程数
 
         for episode in range(episodes):
 
             heading_turns_list = []
-
-            for step in range(self.buffer_size):
-                # Sample actions 调用 collect 方法采样动作和相关信息。
-                values, actions, action_log_probs, rnn_states_actor, rnn_states_critic = self.collect(step)
+            for step in range(self.buffer_size):#每个缓冲区存num_env_steps//buffer_size个时间步的数据
+                # Sample actions 调用 collect 方法采样当前step的价值、动作、动作日志概率 和 RNN状态
+                values, actions, action_log_probs, rnn_states_actor, rnn_states_critic = self.collect(step) # 从缓冲区获取参数，输入到AC网络，获得
 
                 # Obser reward and next obs 执行采样的动作，获得新的观察值、奖励、完成标志和额外信息。 奖励是该任务奖励函数列表的奖励累加
-                obs, rewards, dones, infos = self.envs.step(actions)
+                obs, rewards, dones, infos = self.envs.step(actions)#env是SingleCombatEnv，继承父类BaseEnv的step，
 
                 # Extra recorded information
                 for info in infos:
@@ -69,26 +70,27 @@ class JSBSimRunner(Runner):
                 self.insert(data)
 
             # compute return and update network
-            self.compute() #计算回报值（returns）并将其存储在回放缓冲区中
-            train_infos = self.train()
+            self.compute()  # 计算回报值（returns）并将其存储在回放缓冲区中
+            train_infos = self.train() #每一个episode都会训练一次
 
             # post process 更新总步数
-            self.total_num_steps = (episode + 1) * self.buffer_size * self.n_rollout_threads
+            self.total_num_steps = (episode + 1) * self.buffer_size * self.n_rollout_threads #记录此时多线程环境以经跑的总步数
 
             # log information
-            if episode % self.log_interval == 0:
+            if episode % self.log_interval == 0:#
                 end = time.time()
-                logging.info("\n Scenario {} Algo {} Exp {} updates {}/{} episodes, total num timesteps {}/{}, FPS {}.\n"
-                             .format(self.all_args.scenario_name,
-                                     self.algorithm_name,
-                                     self.experiment_name,
-                                     episode,
-                                     episodes,
-                                     self.total_num_steps,
-                                     self.num_env_steps,
-                                     int(self.total_num_steps / (end - start))))
+                logging.info(
+                    "\n Scenario {} Algo {} Exp {} updates {}/{} episodes, total num timesteps {}/{}, FPS {}.\n"
+                    .format(self.all_args.scenario_name,
+                            self.algorithm_name,
+                            self.experiment_name,
+                            episode,
+                            episodes,
+                            self.total_num_steps,
+                            self.num_env_steps,
+                            int(self.total_num_steps / (end - start))))
                 # 记录训练的日志信息，包括场景、算法、实验名称、更新次数、总步数和每秒帧数（FPS）。
-                #j计算并记录平均每个回合的奖励
+                # j计算并记录平均每个回合的奖励
                 train_infos["average_episode_rewards"] = self.buffer.rewards.sum() / (self.buffer.masks == False).sum()
                 logging.info("average episode rewards is {}".format(train_infos["average_episode_rewards"]))
 
@@ -98,11 +100,11 @@ class JSBSimRunner(Runner):
                 self.log_info(train_infos, self.total_num_steps)
 
             # eval
-            if episode % self.eval_interval == 0 and episode != 0 and self.use_eval:#查是否需要进行评估
+            if episode % self.eval_interval == 0 and episode != 0 and self.use_eval:  # 查是否需要进行评估
                 self.eval(self.total_num_steps)
 
             # save model
-            if (episode % self.save_interval == 0) or (episode == episodes - 1):#检查是否需要保存模型
+            if (episode % self.save_interval == 0) or (episode == episodes - 1):  # 检查是否需要保存模型
                 self.save(episode)
 
     def warmup(self):
@@ -113,9 +115,9 @@ class JSBSimRunner(Runner):
 
     @torch.no_grad()
     def collect(self, step):
-        #采集当前步的数据，包括值、动作、动作日志概率和RNN状态。
-        self.policy.prep_rollout() #设置ac网络为评估模式  ‘\’是行连接符
-        #get_actions用于根据给定的观测值和RNN状态获取动作。
+        # 采集当前步的数据，包括值、动作、动作日志概率和RNN状态。
+        self.policy.prep_rollout()  # 设置ac网络为评估模式  ‘\’是行连接符
+        # get_actions用于根据给定的观测值和RNN状态获取动作。
         values, actions, action_log_probs, rnn_states_actor, rnn_states_critic \
             = self.policy.get_actions(np.concatenate(self.buffer.obs[step]),
                                       np.concatenate(self.buffer.rnn_states_actor[step]),
@@ -130,14 +132,18 @@ class JSBSimRunner(Runner):
         rnn_states_critic = np.array(np.split(_t2n(rnn_states_critic), self.n_rollout_threads))
         return values, actions, action_log_probs, rnn_states_actor, rnn_states_critic
 
-    def insert(self, data: List[np.ndarray]):
-        #将数据插入到回放缓冲区，处理完成状态的RNN状态和掩码。
+    def insert(self, data: List[np.ndarray]):  # 参数data的类型是List列表，列表中元素是np数组
+        # 将数据插入到回放缓冲区，处理完成状态的RNN状态和掩码。
+
+        # 解包data数据，将其分别赋值给 obs（观察值）、actions（动作）、rewards（奖励）、dones（完成标志）、action_log_probs（动作概率日志）、values（值函数估计）、rnn_states_actor（演员的 RNN 状态）和 rnn_states_critic（评论者的 RNN 状态）。
         obs, actions, rewards, dones, action_log_probs, values, rnn_states_actor, rnn_states_critic = data
 
         dones_env = np.all(dones.squeeze(axis=-1), axis=-1)
 
-        rnn_states_actor[dones_env == True] = np.zeros(((dones_env == True).sum(), *rnn_states_actor.shape[1:]), dtype=np.float32)
-        rnn_states_critic[dones_env == True] = np.zeros(((dones_env == True).sum(), *rnn_states_critic.shape[1:]), dtype=np.float32)
+        rnn_states_actor[dones_env == True] = np.zeros(((dones_env == True).sum(), *rnn_states_actor.shape[1:]),
+                                                       dtype=np.float32)
+        rnn_states_critic[dones_env == True] = np.zeros(((dones_env == True).sum(), *rnn_states_critic.shape[1:]),
+                                                        dtype=np.float32)
 
         masks = np.ones((self.n_rollout_threads, self.num_agents, 1), dtype=np.float32)
         masks[dones_env == True] = np.zeros(((dones_env == True).sum(), self.num_agents, 1), dtype=np.float32)
@@ -146,17 +152,18 @@ class JSBSimRunner(Runner):
 
     @torch.no_grad()
     def eval(self, total_num_steps):
-        #训练过程中定期评估策略的性能，确保策略在训练过程中不断提升
+        # 训练过程中定期评估策略的性能，确保策略在训练过程中不断提升
         logging.info("\nStart evaluation...")
         total_episodes, eval_episode_rewards = 0, []
-        eval_cumulative_rewards = np.zeros((self.n_eval_rollout_threads, *self.buffer.rewards.shape[2:]), dtype=np.float32)
+        eval_cumulative_rewards = np.zeros((self.n_eval_rollout_threads, *self.buffer.rewards.shape[2:]),
+                                           dtype=np.float32)
 
         eval_obs = self.eval_envs.reset()
         eval_masks = np.ones((self.n_eval_rollout_threads, *self.buffer.masks.shape[2:]), dtype=np.float32)
-        eval_rnn_states = np.zeros((self.n_eval_rollout_threads, *self.buffer.rnn_states_actor.shape[2:]), dtype=np.float32)
+        eval_rnn_states = np.zeros((self.n_eval_rollout_threads, *self.buffer.rnn_states_actor.shape[2:]),
+                                   dtype=np.float32)
 
         while total_episodes < self.eval_episodes:
-
             self.policy.prep_rollout()
             eval_actions, eval_rnn_states = self.policy.act(np.concatenate(eval_obs),
                                                             np.concatenate(eval_rnn_states),
@@ -174,11 +181,14 @@ class JSBSimRunner(Runner):
             eval_cumulative_rewards[eval_dones_env == True] = 0
 
             eval_masks = np.ones_like(eval_masks, dtype=np.float32)
-            eval_masks[eval_dones_env == True] = np.zeros(((eval_dones_env == True).sum(), *eval_masks.shape[1:]), dtype=np.float32)
-            eval_rnn_states[eval_dones_env == True] = np.zeros(((eval_dones_env == True).sum(), *eval_rnn_states.shape[1:]), dtype=np.float32)
+            eval_masks[eval_dones_env == True] = np.zeros(((eval_dones_env == True).sum(), *eval_masks.shape[1:]),
+                                                          dtype=np.float32)
+            eval_rnn_states[eval_dones_env == True] = np.zeros(
+                ((eval_dones_env == True).sum(), *eval_rnn_states.shape[1:]), dtype=np.float32)
 
         eval_infos = {}
-        eval_infos['eval_average_episode_rewards'] = np.concatenate(eval_episode_rewards).mean(axis=1)  # shape: [num_agents, 1]
+        eval_infos['eval_average_episode_rewards'] = np.concatenate(eval_episode_rewards).mean(
+            axis=1)  # shape: [num_agents, 1]
         logging.info(" eval average episode rewards: " + str(np.mean(eval_infos['eval_average_episode_rewards'])))
         self.log_info(eval_infos, total_num_steps)
         logging.info("...End evaluation")

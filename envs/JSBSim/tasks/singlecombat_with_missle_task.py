@@ -188,7 +188,8 @@ class SingleCombatShootMissileTask(SingleCombatDodgeMissileTask):
         self.remaining_missiles = {agent_id: agent.num_missiles for agent_id, agent in env.agents.items()}
         super().reset(env)
     
-    def step(self, env):
+    def step(self, env):#HierarchicalSingleCombatShootTask的step
+        print('HierarchicalSingleCombatShootTask的step函数')#可注释掉
         SingleCombatTask.step(self, env)
         for agent_id, agent in env.agents.items():
             # [RL-based missile launch with limited condition]
@@ -200,7 +201,7 @@ class SingleCombatShootMissileTask(SingleCombatDodgeMissileTask):
                 self.remaining_missiles[agent_id] -= 1
 
 
-class HierarchicalSingleCombatShootTask(HierarchicalSingleCombatTask, SingleCombatShootMissileTask):
+class HierarchicalSingleCombatShootTask(HierarchicalSingleCombatTask, SingleCombatShootMissileTask):#1v1/ShootMissile/HierarchySelfplay
     def __init__(self, config: str):
         HierarchicalSingleCombatTask.__init__(self, config)
         self.reward_functions = [

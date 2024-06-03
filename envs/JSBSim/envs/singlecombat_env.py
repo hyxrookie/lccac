@@ -26,7 +26,7 @@ class SingleCombatEnv(BaseEnv):
             self.task = SingleCombatShootMissileTask(self.config)
         elif taskname == 'hierarchical_singlecombat_dodge_missile':
             self.task = HierarchicalSingleCombatDodgeMissileTask(self.config)
-        elif taskname == 'hierarchical_singlecombat_shoot':
+        elif taskname == 'hierarchical_singlecombat_shoot':#1v1/ShootMissile/HierarchySelfplay
             self.task = HierarchicalSingleCombatShootTask(self.config)
         else:
             raise NotImplementedError(f"Unknown taskname: {taskname}")
@@ -51,6 +51,7 @@ class SingleCombatEnv(BaseEnv):
         for idx, sim in enumerate(self.agents.values()):
             sim.reload(init_states[idx])
         self._tempsims.clear()
+
 # 这段代码定义了一个名为 `SingleCombatEnv` 的类，作为一个一对一竞技场景的环境。下面是对该代码的作用的解释：
 # 1. 继承和初始化：
 #    - `SingleCombatEnv` 类继承自 `BaseEnv` 类，这是一个基础环境类。

@@ -12,13 +12,12 @@ def _t2n(x):
 
 
 class Runner(object):
-    def __init__(self, config): #__init__是python的构造函数
-
+    def __init__(self, config):
+        #__init__是python的构造函数
         self.all_args = config['all_args']
         self.envs = config['envs']
         self.eval_envs = config['eval_envs']
         self.device = config['device']
-
         # parameters
         self.env_name = self.all_args.env_name
         self.algorithm_name = self.all_args.algorithm_name
@@ -26,16 +25,14 @@ class Runner(object):
         self.num_env_steps = int(self.all_args.num_env_steps)
         self.n_rollout_threads = self.all_args.n_rollout_threads
         self.n_eval_rollout_threads = self.all_args.n_eval_rollout_threads
-        self.buffer_size = self.all_args.buffer_size
+        self.buffer_size = self.all_args.buffer_size #"--buffer-size", "3000",
         self.use_wandb = self.all_args.use_wandb
-
         # interval
         self.save_interval = self.all_args.save_interval
         self.log_interval = self.all_args.log_interval
         self.use_eval = self.all_args.use_eval
         self.eval_interval = self.all_args.eval_interval
         self.eval_episodes = self.all_args.eval_episodes
-
         # dir
         self.model_dir = self.all_args.model_dir
         self.run_dir = config["run_dir"]
@@ -45,9 +42,7 @@ class Runner(object):
             self.save_dir = str(self.run_dir)
             if not os.path.exists(self.save_dir):
                 os.makedirs(self.save_dir)
-
         self.load()
-
     def load(self):
         # algorithm
         if self.algorithm_name == "ppo":
