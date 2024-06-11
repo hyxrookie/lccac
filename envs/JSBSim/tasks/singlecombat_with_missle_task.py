@@ -189,13 +189,17 @@ class SingleCombatShootMissileTask(SingleCombatDodgeMissileTask):
         super().reset(env)
     
     def step(self, env):#HierarchicalSingleCombatShootTask的step
-        print('HierarchicalSingleCombatShootTask的step函数')#可注释掉
+        #print('HierarchicalSingleCombatShootTask的step函数')#可注释掉
         SingleCombatTask.step(self, env)
-        for agent_id, agent in env.agents.items():
+        for agent_id, agent in env.agents.items():#遍历仿真环境中的所有智能体。agent_id 是智能体的唯一标识符，agent 是智能体的实例。
             # [RL-based missile launch with limited condition]
+            #这行代码定义了一个布尔变量 shoot_flag，用于判断是否满足发射导弹的条件：
             shoot_flag = agent.is_alive and self._shoot_action[agent_id] and self.remaining_missiles[agent_id] > 0
             if shoot_flag:
-                new_missile_uid = agent_id + str(self.remaining_missiles[agent_id])
+                new_missile_uid = agent_id + str(self.remaining_missiles[agent_id])#生成一个新的导弹唯一标识符，通常用于区分不同的导弹实例
+
+                #) 创建一个新的导弹仿真器实例，并将其添加到环境中。parent 参数是发射导弹的智能体，
+                # target 是导弹的目标（通常是智能体的敌人），uid 是导弹的唯一标识符
                 env.add_temp_simulator(
                     MissileSimulator.create(parent=agent, target=agent.enemies[0], uid=new_missile_uid))
                 self.remaining_missiles[agent_id] -= 1
@@ -224,8 +228,10 @@ class HierarchicalSingleCombatShootTask(HierarchicalSingleCombatTask, SingleComb
     def normalize_action(self, env, agent_id, action):
         """Convert high-level action into low-level action.
         """
+        #这表明 action 数组的最后一个元素是与发射导弹相关的控制信号
         self._shoot_action[agent_id] = action[-1]
         return HierarchicalSingleCombatTask.normalize_action(self, env, agent_id, action[:-1].astype(np.int32))
+        #action[:-1] 是一个切片操作，用于获取列表或数组 action 的一个子集，这个子集包含了 action 中除了最后一个元素之外的所有元素。
 
     def reset(self, env):
         self._inner_rnn_states = {agent_id: np.zeros((1, 1, 128)) for agent_id in env.agents.keys()}

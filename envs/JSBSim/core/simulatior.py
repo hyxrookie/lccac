@@ -327,6 +327,7 @@ class AircraftSimulator(BaseSimulator):
 
 class MissileSimulator(BaseSimulator):
 
+    #四个不同的状态值，用于判断导弹状态，不可更改，类似于宏
     INACTIVE = -1
     LAUNCHED = 0
     HIT = 1
@@ -353,33 +354,42 @@ class MissileSimulator(BaseSimulator):
         self.render_explosion = False
 
         # missile parameters (for AIM-9L)
-        self._g = 9.81      # gravitational acceleration
-        self._t_max = 60    # time limitation of missile life
-        self._t_thrust = 3  # time limitation of engine
-        self._Isp = 120     # average specific impulse
-        self._Length = 2.87
+        self._g = 9.81      # gravitational acceleration 重力加速度，值为 9.81 m/s^2。
+        self._t_max = 60    # time limitation of missile life 导弹的飞行时间限制，设为 60 秒
+        self._t_thrust = 3  # time limitation of engine  导弹发动机的工作时间限制，设为 3 秒。
+        self._Isp = 120     # average specific impulse 比冲，即火箭发动机有效利用燃料的能力，这里设为 120 秒。这是导弹发动机性能的关键参数。
+        self._Length = 2.87 #导弹的长度和直径，分别为 2.87 米和 0.127 米。
         self._Diameter = 0.127
-        self._cD = 0.4      # aerodynamic drag factor
-        self._m0 = 84       # mass, unit: kg
-        self._dm = 6        # mass loss rate, unit: kg/s
-        self._K = 3         # proportionality constant of proportional navigation
-        self._nyz_max = 30  # max overload
-        self._Rc = 300      # radius of explosion, unit: m
-        self._v_min = 150   # minimun velocity, unit: m/s
+        self._cD = 0.4      # aerodynamic drag factor 导弹的气动阻力系数，设为 0.4。这个值影响导弹在空气中飞行时所受到的阻力。
+        self._m0 = 84       # mass, unit: kg 导弹的初始质量，设为 84 千克
+        self._dm = 6        # mass loss rate, unit: kg/s 导弹飞行过程中的质量损失率，设为每秒 6 千克。这通常是指导弹发动机燃烧燃料导致的质量减少。
+        self._K = 3         # proportionality constant of proportional navigation 比例导航中的比例常数，设为 3。这个值决定了导弹制导系统的敏感度。
+        self._nyz_max = 30  # max overload 导弹能够承受的最大过载，设为 30 g。
+        self._Rc = 300      # radius of explosion, unit: m 导弹爆炸的有效半径，设为 300 米。
+        self._v_min = 150   # minimun velocity, unit: m/s  导弹的最小飞行速度，设为 150 米/秒。如果导弹速度低于此值，可能无法正常工作。
 
     @property
     def is_alive(self):
-        """Missile is still flying"""
+        """Missile is still flying is_alive
+        属性用于检查导弹是否仍在飞行中。如果导弹的状态 (self.__status) 等于 MissileSimulator.LAUNCHED
+        （即导弹已发射但尚未击中或错过目标），则返回 True，表示导弹仍在飞行。
+        这是一个布尔值属性，用于快速判断导弹是否还处于活跃状态。"""
         return self.__status == MissileSimulator.LAUNCHED
 
     @property
     def is_success(self):
-        """Missile has hit the target"""
+        """Missile has hit the target 用于检查导弹是否成功击中目标。
+        如果导弹的状态等于 MissileSimulator.HIT，即导弹已经击中目标，那么返回 True。
+        这同样是一个布尔值属性，用于判断导弹的攻击是否成功。"""
         return self.__status == MissileSimulator.HIT
 
     @property
     def is_done(self):
-        """Missile is already exploded"""
+        """Missile is already exploded
+        is_done 属性用于检查导弹是否已经结束其任务，无论是成功击中目标还是错过目标。
+        如果导弹的状态是 MissileSimulator.HIT（击中目标）或者 MissileSimulator.MISS（错过目标），
+        则返回 True，表示导弹已经爆炸或失效。这个属性用于确定导弹是否已经完成了它的使命，无论是成功还是失败。
+        """
         return self.__status == MissileSimulator.HIT \
             or self.__status == MissileSimulator.MISS
 
@@ -421,7 +431,7 @@ class MissileSimulator(BaseSimulator):
     def target_distance(self) -> float:
         return np.linalg.norm(self.target_aircraft.get_position() - self.get_position())
 
-    def launch(self, parent: AircraftSimulator):
+    def launch(self, parent: AircraftSimulator):#launch 方法用于初始化导弹发射时的状态
         # inherit kinetic parameters from parent aricraft
         self.parent_aircraft = parent
         self.parent_aircraft.launch_missiles.append(self)
@@ -438,25 +448,38 @@ class MissileSimulator(BaseSimulator):
         self.__status = MissileSimulator.LAUNCHED
         self._distance_pre = np.inf
         self._distance_increment = deque(maxlen=int(5 / self.dt))  # 5s of distance increment -- can't hit
+        #deque具有一个最大长度maxlen，当新元素添加到队列中，如果队列已满，最早的元素会被自动移除。
+        #最大长度是通过计算5秒内的时间步数来确定的，即5 / self.dt。
+        #代码中的注释"5s of distance increment -- can't hit"意味着，如果在5秒内，导弹与目标的距离没有显著减少，
+        # 即认为导弹无法击中目标。这是一种启发式规则，用于在一定时间后判断导弹是否可能击中目标。
+        #self.dt：这是导弹仿真的时间步长
+
         self._left_t = int(1 / self.dt)  # remove missile 1s after its destroying
 
     def target(self, target: AircraftSimulator):
         self.target_aircraft = target  # TODO: change target?
         self.target_aircraft.under_missiles.append(self)
 
-    def run(self):
-        self._t += self.dt
-        action, distance = self._guidance()
+    def run(self):#定义了导弹在仿真环境中每经过一个时间步长 dt 时的运行逻辑
+        self._t += self.dt #导弹的飞行时间 _t 增加了当前的时间步长 dt，这反映了导弹从上一次更新以来所经过的时间。
+        action, distance = self._guidance() #调用 _guidance 方法来计算导弹应该遵循的制导指令 action 和当前导弹与目标之间的距离 distance。
         self._distance_increment.append(distance > self._distance_pre)
         self._distance_pre = distance
-        if distance < self._Rc and self.target_aircraft.is_alive:
-            self.__status = MissileSimulator.HIT
+        if distance < self._Rc and self.target_aircraft.is_alive:#如果导弹与目标的距离小于爆炸半径 _Rc 且目标飞机仍然存活，则认为导弹击中了目标。
+            self.__status = MissileSimulator.HIT #设置导弹命中状态并击落目标：
             self.target_aircraft.shotdown()
         elif (self._t > self._t_max) or (np.linalg.norm(self.get_velocity()) < self._v_min) \
                 or np.sum(self._distance_increment) >= self._distance_increment.maxlen or not self.target_aircraft.is_alive:
+            #如果导弹的飞行时间超过最大飞行时间 _t_max，或者导弹的速度小于最小速度 _v_min，
+            # 或者距离增加的次数达到 _distance_increment 队列的最大长度，
+            # 或者目标飞机已经被击落（不存活），则认为导弹未命中。
             self.__status = MissileSimulator.MISS
         else:
+            #如果导弹没有击中也没有未命中，调用 _state_trans 方法来进行状态转换，根据制导指令 action 更新导弹的位置、速度和姿态。
             self._state_trans(action)
+    # run方法是导弹仿真的每次迭代都会执行的，它根据导弹的制导逻辑和当前状态来更新导弹的行为，
+    # 直到导弹命中目标、未命中或飞行时间结束。通过这种方法，仿真可以模拟导弹的飞行路径和攻击结果。
+
 
     def log(self):
         if self.is_alive:
@@ -479,16 +502,17 @@ class MissileSimulator(BaseSimulator):
 
     def _guidance(self):
         """
+        实现了导弹的制导逻辑
         Guidance law, proportional navigation
         """
-        x_m, y_m, z_m = self.get_position()
-        dx_m, dy_m, dz_m = self.get_velocity()
-        v_m = np.linalg.norm([dx_m, dy_m, dz_m])
-        theta_m = np.arcsin(dz_m / v_m)
-        x_t, y_t, z_t = self.target_aircraft.get_position()
-        dx_t, dy_t, dz_t = self.target_aircraft.get_velocity()
-        Rxy = np.linalg.norm([x_m - x_t, y_m - y_t])  # distance from missile to target project to X-Y plane
-        Rxyz = np.linalg.norm([x_m - x_t, y_m - y_t, z_t - z_m])  # distance from missile to target
+        x_m, y_m, z_m = self.get_position() #导弹的位置
+        dx_m, dy_m, dz_m = self.get_velocity() #导弹的速度
+        v_m = np.linalg.norm([dx_m, dy_m, dz_m]) #导弹速度大小
+        theta_m = np.arcsin(dz_m / v_m) #导弹的飞行俯仰角，即导弹速度向量与水平面的夹角。
+        x_t, y_t, z_t = self.target_aircraft.get_position()#目标位置
+        dx_t, dy_t, dz_t = self.target_aircraft.get_velocity()#目标速度
+        Rxy = np.linalg.norm([x_m - x_t, y_m - y_t])  # distance from missile to target project to X-Y plane 导弹到目标在水平面（X-Y平面）上的投影距离。
+        Rxyz = np.linalg.norm([x_m - x_t, y_m - y_t, z_t - z_m])  # distance from missile to target 导弹到目标的直线距离。
         # calculate beta & eps, but no need actually...
         # beta = np.arctan2(y_m - y_t, x_m - x_t)  # relative yaw
         # eps = np.arctan2(z_m - z_t, np.linalg.norm([x_m - x_t, y_m - y_t]))  # relative pitch

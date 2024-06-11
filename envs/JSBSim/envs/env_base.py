@@ -122,16 +122,18 @@ class BaseEnv(gymnasium.Env):
                 dones: whether the episode has ended, in which case further step() calls are undefined
                 info: auxiliary information
         """
-        print("env_base step")#可注释掉
+        #print("env_base step")#可注释掉
         self.current_step += 1
         info = {"current_step": self.current_step}
         # apply actions
-        action = self._unpack(action)
-        for agent_id in self.agents.keys():
+        action = self._unpack(action)#解包数据，为了使敌机与我机各自获得各自的动作
+        for agent_id in self.agents.keys():#敌我两架飞机分别处理
+            # 这里会将飞机的动作进行标准化处理，对于带导弹任务，执行HierarchicalSingleCombatShootTask中的normalize_action，
+            # self._shoot_action[agent_id] = action[-1]将最后一维动作作为发射动作
             a_action = self.task.normalize_action(self, agent_id, action[agent_id])
             self.agents[agent_id].set_property_values(self.task.action_var, a_action)
         # run simulation
-        for _ in range(self.agent_interaction_steps):
+        for _ in range(self.agent_interaction_steps):#agent_interaction_steps=12，一个时间步执行12个步长，每个步长0.2s
             for sim in self._jsbsims.values():
                 sim.run()
             for sim in self._tempsims.values():
@@ -255,7 +257,7 @@ class BaseEnv(gymnasium.Env):
         # only return data that belongs to RL agents
         return data[:self.num_agents, ...]
 
-    def _unpack(self, data: np.ndarray) -> Dict[str, Any]:
+    def _unpack(self, data: np.ndarray) -> Dict[str, Any]:#解包数据
         """Unpack grouped np.ndarray into seperated key-value dict"""
         assert isinstance(data, (np.ndarray, list, tuple)) and len(data) == self.num_agents
         # unpack data in the same order to packing process

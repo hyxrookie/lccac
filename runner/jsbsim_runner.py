@@ -39,7 +39,7 @@ class JSBSimRunner(Runner):
     # 模型恢复: 如果有模型目录，加载已保存的模型。
 
     def run(self):
-        print("jsbsim_runner run")
+        #print("jsbsim_runner run")
         self.warmup()
 
         start = time.time()  # 获取当前时间戳，用于后续计算训练时间。

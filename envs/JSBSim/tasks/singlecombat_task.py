@@ -215,17 +215,17 @@ class HierarchicalSingleCombatTask(SingleCombatTask):
     def load_action_space(self):
         self.action_space = spaces.MultiDiscrete([3, 5, 3])
 
-    def normalize_action(self, env, agent_id, action):
+    def normalize_action(self, env, agent_id, action):#将智能体的高层动作转换为低层动作
         """Convert high-level action into low-level action.
         """
         if self.use_baseline and agent_id in env.enm_ids:
             action = self.baseline_agent.get_action(env.agents[agent_id])
             return action
-        else:
+        else:#不使用基线
             # generate low-level input_obs
-            raw_obs = self.get_obs(env, agent_id)
-            input_obs = np.zeros(12)
-            # (1) delta altitude/heading/velocity
+            raw_obs = self.get_obs(env, agent_id) #获取智能体的原始观察数据。SingleCombatTask中的get_obs
+            input_obs = np.zeros(12)#初始化一个长度为12的零数组，用于存储转换后的观察数据。
+            # (1) delta altitude/heading/velocity 高层动作转换
             input_obs[0] = self.norm_delta_altitude[action[0]]
             input_obs[1] = self.norm_delta_heading[action[1]]
             input_obs[2] = self.norm_delta_velocity[action[2]]

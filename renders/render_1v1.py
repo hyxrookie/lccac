@@ -27,9 +27,9 @@ num_agents = 2
 render = True
 ego_policy_index = 'latest'
 enm_policy_index = 0
-episode_rewards = 0
-ego_run_dir = "../scripts/results/SingleCombat/1v1/ShootMissile/HierarchySelfplay/ppo/v1/wandb/run-20240529_154549-faeg7h0f/files"
-enm_run_dir = "../scripts/results/SingleCombat/1v1/ShootMissile/HierarchySelfplay/ppo/v1/wandb/run-20240529_154549-faeg7h0f/files"
+episode_rewards = 2
+ego_run_dir = "../scripts/results/SingleCombat/1v1/ShootMissile/HierarchySelfplay/ppo/v1/wandb/run-20240606_161439-zxp1fvx3/files"
+enm_run_dir = "../scripts/results/SingleCombat/1v1/ShootMissile/HierarchySelfplay/ppo/v1/wandb/run-20240606_161439-zxp1fvx3/files"
 experiment_name = ego_run_dir.split('/')[-4]
 
 env = SingleCombatEnv("1v1/ShootMissile/HierarchySelfplay")
@@ -63,15 +63,21 @@ while True:
     actions = np.concatenate((ego_actions, enm_actions), axis=0)
     # Obser reward and next obs
     obs, rewards, dones, infos = env.step(actions)
+    #这行代码提取并只保留己方智能体获得的奖励。
     rewards = rewards[:num_agents // 2, ...]
+    #将己方智能体获得的奖励累加到 episode_rewards 变量中。
     episode_rewards += rewards
     if render:
         env.render(mode='txt', filepath=f'{experiment_name}.txt.acmi')
+    #这行代码检查所有智能体是否都完成了任务（即 dones 数组中的所有值是否为True）。如果是，则打印附加信息 infos 并退出循环。
     if dones.all():
         print(infos)
         break
+    #这行代码遍历所有智能体，并收集它们的生命值（bloods）。
     bloods = [env.agents[agent_id].bloods for agent_id in env.agents.keys()]
+    #打印当前仿真步骤号和所有智能体的生命值。
     print(f"step:{env.current_step}, bloods:{bloods}")
+    #这两行代码将新观察状态 obs 分别分配给敌方和己方观察状态 enm_obs 和 ego_obs。
     enm_obs =  obs[num_agents // 2:, ...]
     ego_obs =  obs[:num_agents // 2, ...]
 

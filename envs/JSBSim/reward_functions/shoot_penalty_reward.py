@@ -28,7 +28,7 @@ class ShootPenaltyReward(BaseRewardFunction):
         """
         reward = 0
         if task.remaining_missiles[agent_id] == self.pre_remaining_missiles[agent_id] - 1:
-            reward -= 10
+            reward -= 2
             #如果当前代理的剩余导弹数量比前一次记录的减少了 1，则表示该代理刚刚发射了一枚导弹。
             # 此时，给予一个 -10 的奖励（即惩罚），以避免代理一次性发射所有导弹。
         self.pre_remaining_missiles[agent_id] = task.remaining_missiles[agent_id]
