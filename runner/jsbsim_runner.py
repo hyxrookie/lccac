@@ -54,6 +54,7 @@ class JSBSimRunner(Runner):
             heading_turns_list = []
             for step in range(self.buffer_size):#每个缓冲区存num_env_steps//buffer_size个时间步的数据
                 # Sample actions 调用 collect 方法采样当前step的价值、动作、动作日志概率 和 RNN状态
+                #下面的collect是runner/selfplay_jsbsim_runner.py中的collect
                 values, actions, action_log_probs, rnn_states_actor, rnn_states_critic = self.collect(step) # 从缓冲区获取参数，输入到AC网络，获得
 
                 # Obser reward and next obs 执行采样的动作，获得新的观察值、奖励、完成标志和额外信息。 奖励是该任务奖励函数列表的奖励累加
@@ -67,7 +68,7 @@ class JSBSimRunner(Runner):
                 data = obs, actions, rewards, dones, action_log_probs, values, rnn_states_actor, rnn_states_critic
 
                 # insert data into buffer
-                self.insert(data)
+                self.insert(data)#明明obs，actions尺寸为（4，2，x），为什么进入insert却变为（4，1，x），只保存一架飞机，不保存另一架？
 
             # compute return and update network
             self.compute()  # 计算回报值（returns）并将其存储在回放缓冲区中
@@ -134,7 +135,6 @@ class JSBSimRunner(Runner):
 
     def insert(self, data: List[np.ndarray]):  # 参数data的类型是List列表，列表中元素是np数组
         # 将数据插入到回放缓冲区，处理完成状态的RNN状态和掩码。
-
         # 解包data数据，将其分别赋值给 obs（观察值）、actions（动作）、rewards（奖励）、dones（完成标志）、action_log_probs（动作概率日志）、values（值函数估计）、rnn_states_actor（演员的 RNN 状态）和 rnn_states_critic（评论者的 RNN 状态）。
         obs, actions, rewards, dones, action_log_probs, values, rnn_states_actor, rnn_states_critic = data
 
@@ -148,6 +148,7 @@ class JSBSimRunner(Runner):
         masks = np.ones((self.n_rollout_threads, self.num_agents, 1), dtype=np.float32)
         masks[dones_env == True] = np.zeros(((dones_env == True).sum(), self.num_agents, 1), dtype=np.float32)
 
+        #将上述处理过的数据插入到回放缓冲区 buffer 中。缓冲区的 insert 方法会负责将这些数据存储起来，以供后续训练使用。
         self.buffer.insert(obs, actions, rewards, masks, action_log_probs, values, rnn_states_actor, rnn_states_critic)
 
     @torch.no_grad()

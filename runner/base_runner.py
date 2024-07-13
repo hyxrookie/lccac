@@ -89,7 +89,7 @@ class Runner(object):
     def train(self):
         self.policy.prep_training()
         train_infos = self.trainer.train(self.policy, self.buffer)
-        self.buffer.after_update()
+        self.buffer.after_update() #在模型更新后，将最后一个时间步的数据复制到第一个索引位置，以便为下一轮数据采集做好准备。
         return train_infos
 
     def save(self):

@@ -73,8 +73,9 @@ class SelfplayJSBSimRunner(JSBSimRunner):
     @torch.no_grad()
     def collect(self, step):
         self.policy.prep_rollout()
+        #从当前策略中获取动作（actions）、动作的 log 概率（action_log_probs）、状态值函数（values）、以及 RNN 状态（rnn_states_actor 和 rnn_states_critic）。输入是当前步骤的观察值、RNN 状态和掩码。
         values, actions, action_log_probs, rnn_states_actor, rnn_states_critic \
-            = self.policy.get_actions(np.concatenate(self.buffer.obs[step]),
+            = self.policy.get_actions(np.concatenate(self.buffer.obs[step]),#这个函数用于根据给定的观测值和RNN状态获取动作。
                                       np.concatenate(self.buffer.rnn_states_actor[step]),
                                       np.concatenate(self.buffer.rnn_states_critic[step]),
                                       np.concatenate(self.buffer.masks[step]))
@@ -90,7 +91,7 @@ class SelfplayJSBSimRunner(JSBSimRunner):
         for policy_idx, policy in enumerate(self.opponent_policy):
             env_idx = self.opponent_env_split[policy_idx]
             opponent_action, opponent_rnn_states \
-                = policy.act(np.concatenate(self.opponent_obs[env_idx]),
+                = policy.act(np.concatenate(self.opponent_obs[env_idx]), #函数用于根据给定的观测值和RNN状态生成动作。
                                 np.concatenate(self.opponent_rnn_states[env_idx]),
                                 np.concatenate(self.opponent_masks[env_idx]))
             opponent_actions[env_idx] = np.array(np.split(_t2n(opponent_action), len(env_idx)))

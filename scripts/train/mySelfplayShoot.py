@@ -182,7 +182,7 @@ if __name__ == "__main__":
         "--experiment-name", "v1",
         "--seed", "1",
         "--n-training-threads", "1",
-        "--n-rollout-threads", "1",
+        "--n-rollout-threads", "4",
         "--cuda",
         "--log-interval", "1",
         "--save-interval", "1",

@@ -44,23 +44,23 @@ class BaseSimulator(ABC):
     def dt(self) -> float:
         return self.__dt
 
-    def get_geodetic(self):
+    def get_geodetic(self):#返回仿真器的地理位置（经度、纬度、高度）
         """(lontitude, latitude, altitude), unit: °, m"""
         return self._geodetic
 
-    def get_position(self):
+    def get_position(self):#返回仿真器的位置（北、东、上，单位：米）。
         """(north, east, up), unit: m"""
         return self._position
 
-    def get_rpy(self):
+    def get_rpy(self):#返回仿真器的姿态（滚转、俯仰、偏航，单位：弧度）。
         """(roll, pitch, yaw), unit: rad"""
         return self._posture
 
-    def get_velocity(self):
+    def get_velocity(self):#返回仿真器的速度
         """(v_north, v_east, v_up), unit: m/s"""
         return self._velocity
 
-    def reload(self):
+    def reload(self):#重置仿真器的地理位置、位置、姿态和速度。
         self._geodetic = np.zeros(3)
         self._position = np.zeros(3)
         self._posture = np.zeros(3)
@@ -337,8 +337,8 @@ class MissileSimulator(BaseSimulator):
     def create(cls, parent: AircraftSimulator, target: AircraftSimulator, uid: str, missile_model: str = "AIM-9L"):
         assert parent.dt == target.dt, "integration timestep must be same!"
         missile = MissileSimulator(uid, parent.color, missile_model, parent.dt)
-        missile.launch(parent)
-        missile.target(target)
+        missile.launch(parent) #发射
+        missile.target(target) #设置目标
         return missile
 
     def __init__(self,
@@ -431,7 +431,7 @@ class MissileSimulator(BaseSimulator):
     def target_distance(self) -> float:
         return np.linalg.norm(self.target_aircraft.get_position() - self.get_position())
 
-    def launch(self, parent: AircraftSimulator):#launch 方法用于初始化导弹发射时的状态
+    def launch(self, parent: AircraftSimulator):#launch 方法用于初始化导弹发射时的状态，继承父飞机的动能参数。将导弹状态设置为已发射。
         # inherit kinetic parameters from parent aricraft
         self.parent_aircraft = parent
         self.parent_aircraft.launch_missiles.append(self)
@@ -456,7 +456,7 @@ class MissileSimulator(BaseSimulator):
 
         self._left_t = int(1 / self.dt)  # remove missile 1s after its destroying
 
-    def target(self, target: AircraftSimulator):
+    def target(self, target: AircraftSimulator):#设置导弹的目标飞机。
         self.target_aircraft = target  # TODO: change target?
         self.target_aircraft.under_missiles.append(self)
 

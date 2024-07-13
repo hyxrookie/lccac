@@ -30,7 +30,6 @@ class SingleCombatDodgeMissileTask(SingleCombatTask):
     def get_obs(self, env, agent_id):
         """
         Convert simulation states into the format of observation_space
-
         ------
         Returns: (np.ndarray)
         - ego info
@@ -202,6 +201,7 @@ class SingleCombatShootMissileTask(SingleCombatDodgeMissileTask):
                 # target 是导弹的目标（通常是智能体的敌人），uid 是导弹的唯一标识符
                 env.add_temp_simulator(
                     MissileSimulator.create(parent=agent, target=agent.enemies[0], uid=new_missile_uid))
+                #创建就会发射
                 self.remaining_missiles[agent_id] -= 1
 
 

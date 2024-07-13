@@ -47,7 +47,7 @@ S = \pi(\frac{d}{2})^2+(\sin^2(\Delta\theta)+\sin^2(\Delta\varphi))dL
 $$
 
 式中， $d$ 为导弹直径， $L$ 为导弹半径， $\Delta\theta,\Delta\varphi$ 为导弹姿态和航迹在俯仰角、偏航角上的差值，可近似认为是航迹俯仰角、偏航角 $\theta,\varphi$ 在 $\Delta t$ 时间内的变化量，即 $\Delta\theta=\dot{\theta}\Delta t$, $\Delta\varphi=\dot{\varphi}\Delta t$。
- 
+
 ### 导弹导引控制模型
 
 导弹导引采用比例导引律。假设在相互垂直的两个控制平面内导引系数均为 $K=3$ ，偏航和俯仰方向的两个侧向控制过载定义为：
