@@ -15,6 +15,7 @@ class ShootPenaltyReward(BaseRewardFunction):
         # self.pre_remaining_missiles，记录每个代理的剩余导弹数量。agent.num_missiles表示代理当前拥有的导弹数量。
         return super().reset(task, env)
 
+
     def get_reward(self, task, env, agent_id):
         """
         Reward is the sum of all the events.

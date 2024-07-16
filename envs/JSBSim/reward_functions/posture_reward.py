@@ -45,6 +45,7 @@ class PostureReward(BaseRewardFunction):
             enm_feature = np.hstack([enm.get_position(),
                                     enm.get_velocity()])
             AO, TA, R = get_AO_TA_R(ego_feature, enm_feature)
+
             orientation_reward = self.orientation_fn(AO, TA)
             range_reward = self.range_fn(R / 1000)
             new_reward += orientation_reward * range_reward
