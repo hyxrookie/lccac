@@ -12,6 +12,8 @@ class BaseRewardFunction(ABC):
         self.config = config
         # inner variables
         self.reward_scale = getattr(self.config, f'{self.__class__.__name__}_scale', 1.0)
+        #  使用 getattr 函数尝试从 self.config 对象中获取名为 self.__class__._scale 的属性值。
+        #  如果 self.config 中存在这个属性，则返回该属性的值；如果不存在，则返回默认值 1.0。
         self.is_potential = getattr(self.config, f'{self.__class__.__name__}_potential', False)
         self.pre_rewards = defaultdict(float)
         self.reward_trajectory = defaultdict(list)
