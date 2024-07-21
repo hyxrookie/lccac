@@ -25,11 +25,11 @@ def _t2n(x):
 
 num_agents = 2
 render = True
-ego_policy_index = 'latest'
-enm_policy_index = 0
-episode_rewards = 2
-ego_run_dir = "../scripts/results/SingleCombat/1v1/ShootMissile/HierarchySelfplay/ppo/v1/wandb/run-20240606_161439-zxp1fvx3/files"
-enm_run_dir = "../scripts/results/SingleCombat/1v1/ShootMissile/HierarchySelfplay/ppo/v1/wandb/run-20240606_161439-zxp1fvx3/files"
+ego_policy_index = '375'
+enm_policy_index = '0'
+episode_rewards = 0
+ego_run_dir = "../scripts/results/SingleCombat/1v1/ShootMissile/HierarchySelfplay/ppo/v1/wandb/run-20240718_172042-42oc3lvk/files"
+enm_run_dir = "../scripts/results/SingleCombat/1v1/ShootMissile/HierarchySelfplay/ppo/v1/wandb/run-20240718_172042-42oc3lvk/files"
 experiment_name = ego_run_dir.split('/')[-4]
 
 env = SingleCombatEnv("1v1/ShootMissile/HierarchySelfplay")

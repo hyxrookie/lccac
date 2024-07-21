@@ -1,5 +1,7 @@
 import os
 import logging
+import random
+
 import numpy as np
 from collections import deque
 from abc import ABC, abstractmethod
@@ -114,7 +116,13 @@ class AircraftSimulator(BaseSimulator):
         """
         super().__init__(uid, color, 1 / sim_freq)
         self.model = model
-        self.init_state = init_state
+        self.init_state = {
+            "ic_long_gc_deg": random.uniform(119.5,120.5),
+            "ic_lat_geod_deg": random.uniform(59.5,60.5),
+            "ic_h_sl_ft": random.randint(17000,23000),
+            "ic_psi_true_deg": -90,
+            "ic_u_fps": random.randint(800,1000),
+        }
         self.lon0, self.lat0, self.alt0 = origin
         self.bloods = 100
         self.__status = AircraftSimulator.ALIVE
@@ -355,9 +363,9 @@ class MissileSimulator(BaseSimulator):
 
         # missile parameters (for AIM-9L)
         self._g = 9.81      # gravitational acceleration 重力加速度，值为 9.81 m/s^2。
-        self._t_max = 60    # time limitation of missile life 导弹的飞行时间限制，设为 60 秒
-        self._t_thrust = 3  # time limitation of engine  导弹发动机的工作时间限制，设为 3 秒。
-        self._Isp = 120     # average specific impulse 比冲，即火箭发动机有效利用燃料的能力，这里设为 120 秒。这是导弹发动机性能的关键参数。
+        self._t_max = 80    # time limitation of missile life 导弹的飞行时间限制，设为 60 秒
+        self._t_thrust = 4  # time limitation of engine  导弹发动机的工作时间限制，设为 3 秒。
+        self._Isp = 130     # average specific impulse 比冲，即火箭发动机有效利用燃料的能力，这里设为 120 秒。这是导弹发动机性能的关键参数。
         self._Length = 2.87 #导弹的长度和直径，分别为 2.87 米和 0.127 米。
         self._Diameter = 0.127
         self._cD = 0.4      # aerodynamic drag factor 导弹的气动阻力系数，设为 0.4。这个值影响导弹在空气中飞行时所受到的阻力。

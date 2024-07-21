@@ -117,8 +117,8 @@ class ReplayBuffer(Buffer):
             masks (np.ndarray)：时间步 t+1 时的掩码，用于指示是否是终止状态，通常为 1 - done[t]。
             action_log_probs (np.ndarray)：时间步 t 时动作的对数概率。
             value_preds (np.ndarray)：时间步 t 时的价值预测。
-            rnn_states_actor (np.ndarray)：时间步 t+1 时演员的 RNN 状态。
-            rnn_states_critic (np.ndarray)：时间步 t+1 时评论家的 RNN 状态。
+            rnn_states_actor (np.ndarray)：时间步 t+1 时Actor的 RNN 状态。
+            rnn_states_critic (np.ndarray)：时间步 t+1 时Critic的 RNN 状态。
             bad_masks (np.ndarray, optional)：时间步 t+1 时的坏掩码，用于指示状态是否因时间限制而终止。
         """
         self.obs[self.step + 1] = obs.copy() #将时间步 t+1 时的观测值插入到 obs 数组中的当前位置 self.step + 1。使用 copy() 确保数据是独立的副本，避免原始数据被修改。

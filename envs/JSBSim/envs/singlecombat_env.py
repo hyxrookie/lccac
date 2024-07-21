@@ -1,4 +1,5 @@
 import numpy as np
+import random
 from .env_base import BaseEnv
 from ..tasks import SingleCombatTask, SingleCombatDodgeMissileTask, HierarchicalSingleCombatDodgeMissileTask, \
     HierarchicalSingleCombatShootTask, SingleCombatShootMissileTask, HierarchicalSingleCombatTask
@@ -40,16 +41,26 @@ class SingleCombatEnv(BaseEnv):
 
     def reset_simulators(self):
         # switch side
-        if self.init_states is None:
-            self.init_states = [sim.init_state.copy() for sim in self.agents.values()]
-        # self.init_states[0].update({
-        #     'ic_psi_true_deg': (self.np_random.uniform(270, 540))%360,
-        #     'ic_h_sl_ft': self.np_random.uniform(17000, 23000),
-        # })
-        init_states = self.init_states.copy()
-        self.np_random.shuffle(init_states)
-        for idx, sim in enumerate(self.agents.values()):
-            sim.reload(init_states[idx])
+        # if self.init_states is None:
+        #     self.init_states = [sim.init_state.copy() for sim in self.agents.values()]
+        # # self.init_states[0].update({
+        # #     'ic_psi_true_deg': (self.np_random.uniform(270, 540))%360,
+        # #     'ic_h_sl_ft': self.np_random.uniform(17000, 23000),
+        # # })
+        # init_states = self.init_states.copy()
+        # self.np_random.shuffle(init_states)
+        # for idx, sim in enumerate(self.agents.values()):
+        #     sim.reload(init_states[idx])
+        for sim in self.agents.values():
+            sim.reload({
+                "ic_long_gc_deg": random.uniform(119.5, 120.5),
+                "ic_lat_geod_deg": random.uniform(59.5, 60.5),
+                "ic_h_sl_ft": random.randint(17000, 23000),
+                "ic_psi_true_deg": random.uniform(0, 360),
+                "ic_u_fps": random.randint(800, 1000),
+            })
+
+
         self._tempsims.clear()
 
 # 这段代码定义了一个名为 `SingleCombatEnv` 的类，作为一个一对一竞技场景的环境。下面是对该代码的作用的解释：

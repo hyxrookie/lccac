@@ -69,11 +69,9 @@ class JSBSimRunner(Runner):
 
                 # insert data into buffer
                 self.insert(data)#明明obs，actions尺寸为（4，2，x），为什么进入insert却变为（4，1，x），只保存一架飞机，不保存另一架？
-
             # compute return and update network
             self.compute()  # 计算回报值（returns）并将其存储在回放缓冲区中
             train_infos = self.train() #每一个episode都会训练一次
-
             # post process 更新总步数
             self.total_num_steps = (episode + 1) * self.buffer_size * self.n_rollout_threads #记录此时多线程环境以经跑的总步数
 
