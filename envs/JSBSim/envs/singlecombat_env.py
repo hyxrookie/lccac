@@ -53,8 +53,8 @@ class SingleCombatEnv(BaseEnv):
         #     sim.reload(init_states[idx])
         for sim in self.agents.values():
             sim.reload({
-                "ic_long_gc_deg": random.uniform(119.5, 120.5),
-                "ic_lat_geod_deg": random.uniform(59.5, 60.5),
+                "ic_long_gc_deg": random.uniform(119.8, 120.2),
+                "ic_lat_geod_deg": random.uniform(59.8, 60.2),
                 "ic_h_sl_ft": random.randint(17000, 23000),
                 "ic_psi_true_deg": random.uniform(0, 360),
                 "ic_u_fps": random.randint(800, 1000),

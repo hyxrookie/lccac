@@ -25,8 +25,8 @@ def _t2n(x):
 
 num_agents = 2
 render = True
-ego_policy_index = '375'
-enm_policy_index = '0'
+ego_policy_index = '2'
+enm_policy_index = '4'
 episode_rewards = 0
 ego_run_dir = "../scripts/results/SingleCombat/1v1/ShootMissile/HierarchySelfplay/ppo/v1/wandb/run-20240718_172042-42oc3lvk/files"
 enm_run_dir = "../scripts/results/SingleCombat/1v1/ShootMissile/HierarchySelfplay/ppo/v1/wandb/run-20240718_172042-42oc3lvk/files"

@@ -117,10 +117,10 @@ class AircraftSimulator(BaseSimulator):
         super().__init__(uid, color, 1 / sim_freq)
         self.model = model
         self.init_state = {
-            "ic_long_gc_deg": random.uniform(119.5,120.5),
-            "ic_lat_geod_deg": random.uniform(59.5,60.5),
+            "ic_long_gc_deg": random.uniform(119.8,120.2),
+            "ic_lat_geod_deg": random.uniform(59.8,60.2),
             "ic_h_sl_ft": random.randint(17000,23000),
-            "ic_psi_true_deg": -90,
+            "ic_psi_true_deg": random.uniform(0, 360),
             "ic_u_fps": random.randint(800,1000),
         }
         self.lon0, self.lat0, self.alt0 = origin
