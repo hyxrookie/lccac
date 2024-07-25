@@ -25,14 +25,14 @@ def _t2n(x):
 
 num_agents = 2
 render = True
-ego_policy_index = '2'
+ego_policy_index = '4'
 enm_policy_index = '4'
 episode_rewards = 0
-ego_run_dir = "../scripts/results/SingleCombat/1v1/ShootMissile/HierarchySelfplay/ppo/v1/wandb/run-20240718_172042-42oc3lvk/files"
-enm_run_dir = "../scripts/results/SingleCombat/1v1/ShootMissile/HierarchySelfplay/ppo/v1/wandb/run-20240718_172042-42oc3lvk/files"
-experiment_name = ego_run_dir.split('/')[-4]
+ego_run_dir = r"D:\CloseAirCombat-master\scripts\results\SingleCombat\1v1\ShootMissile\HierarchySelfplay\ppo\v1\run1"
+enm_run_dir = r"D:\CloseAirCombat-master\scripts\results\SingleCombat\1v1\ShootMissile\HierarchySelfplay\ppo\v1\run1"
+experiment_name = ego_run_dir.split('\\')[-4]
 
-env = SingleCombatEnv("1v1/ShootMissile/HierarchySelfplay")
+env = SingleCombatEnv("1v1/ShootMissile/HierarchySelfplay",0)
 env.seed(0)
 args = Args()
 
@@ -43,42 +43,101 @@ enm_policy.eval()
 ego_policy.load_state_dict(torch.load(ego_run_dir + f"/actor_{ego_policy_index}.pt"))
 enm_policy.load_state_dict(torch.load(enm_run_dir + f"/actor_{enm_policy_index}.pt"))
 
+ego_spend_time = 0
+ego_lunch_missile_number = 0
+ego_distance = 0
+ego_missile_hit_count = 0
+ego_clash_count = 0
+ego_shot_down_count = 0
+ego_been_shot_down_count = 0
 
+enm_spend_time = 0
+enm_lunch_missile_number = 0
+enm_distance = 0
+enm_missile_hit_count = 0
+enm_clash_count = 0
+enm_shot_down_count = 0
+enm_been_shot_down_count = 0
+
+start = 0
+end = 10
+Result_statistics = {}
 print("Start render")
-obs = env.reset()
-if render:
-    env.render(mode='txt', filepath=f'{experiment_name}.txt.acmi')
-ego_rnn_states = np.zeros((1, 1, 128), dtype=np.float32)
-masks = np.ones((num_agents // 2, 1))
-enm_obs =  obs[num_agents // 2:, :]
-ego_obs =  obs[:num_agents // 2, :]
-enm_rnn_states = np.zeros_like(ego_rnn_states, dtype=np.float32)
-while True:
-    ego_actions, _, ego_rnn_states = ego_policy(ego_obs, ego_rnn_states, masks, deterministic=True)
-    ego_actions = _t2n(ego_actions)
-    ego_rnn_states = _t2n(ego_rnn_states)
-    enm_actions, _, enm_rnn_states = enm_policy(enm_obs, enm_rnn_states, masks, deterministic=True)
-    enm_actions = _t2n(enm_actions)
-    enm_rnn_states = _t2n(enm_rnn_states)
-    actions = np.concatenate((ego_actions, enm_actions), axis=0)
-    # Obser reward and next obs
-    obs, rewards, dones, infos = env.step(actions)
-    #这行代码提取并只保留己方智能体获得的奖励。
-    rewards = rewards[:num_agents // 2, ...]
-    #将己方智能体获得的奖励累加到 episode_rewards 变量中。
-    episode_rewards += rewards
+while start != end:
+    start += 1
+    episode_rewards = 0
+    obs = env.reset()
     if render:
-        env.render(mode='txt', filepath=f'{experiment_name}.txt.acmi')
-    #这行代码检查所有智能体是否都完成了任务（即 dones 数组中的所有值是否为True）。如果是，则打印附加信息 infos 并退出循环。
-    if dones.all():
-        print(infos)
-        break
-    #这行代码遍历所有智能体，并收集它们的生命值（bloods）。
-    bloods = [env.agents[agent_id].bloods for agent_id in env.agents.keys()]
-    #打印当前仿真步骤号和所有智能体的生命值。
-    print(f"step:{env.current_step}, bloods:{bloods}")
-    #这两行代码将新观察状态 obs 分别分配给敌方和己方观察状态 enm_obs 和 ego_obs。
-    enm_obs =  obs[num_agents // 2:, ...]
-    ego_obs =  obs[:num_agents // 2, ...]
+        env.render(mode='txt', filepath=f'{experiment_name}task{ego_policy_index}vs{enm_policy_index}version{start}.txt.acmi')
+    ego_rnn_states = np.zeros((1, 1, 128), dtype=np.float32)
+    masks = np.ones((num_agents // 2, 1))
+    enm_obs =  obs[num_agents // 2:, :]
+    ego_obs =  obs[:num_agents // 2, :]
+    enm_rnn_states = np.zeros_like(ego_rnn_states, dtype=np.float32)
+    while True:
+        ego_actions, _, ego_rnn_states = ego_policy(ego_obs, ego_rnn_states, masks, deterministic=True)
+        ego_actions = _t2n(ego_actions)
+        ego_rnn_states = _t2n(ego_rnn_states)
+        enm_actions, _, enm_rnn_states = enm_policy(enm_obs, enm_rnn_states, masks, deterministic=True)
+        enm_actions = _t2n(enm_actions)
+        enm_rnn_states = _t2n(enm_rnn_states)
+        actions = np.concatenate((ego_actions, enm_actions), axis=0)
+        # Obser reward and next obs
+        obs, rewards, dones, infos = env.step(actions)
+        for sim in env.agents.values():
+            if sim.uid.__eq__("A0100"):
+                ego_distance += env.combat_distance(sim.uid)
+            else:
+                break
+        rewards = rewards[:num_agents // 2, ...]
 
-print(episode_rewards)
+        episode_rewards += rewards
+        if render:
+            env.render(mode='txt', filepath=f'{experiment_name}task{ego_policy_index}vs{enm_policy_index}version{start}.txt.acmi')
+        if dones.all():
+            for sim in env.agents.values():
+                if sim.uid.__eq__("A0100"):
+                    ego_spend_time += infos["current_step"]
+                    ego_lunch_missile_number +=len(sim.launch_missiles)
+                    for missile in sim.launch_missiles:
+                        ego_missile_hit_count += int(missile.is_success)
+                    ego_clash_count += int(sim.is_crash)
+                    ego_shot_down_count += int(sim.enemies[0].is_shotdown)
+                    ego_been_shot_down_count += int(sim.is_shotdown)
+                if sim.uid.__eq__("B0100"):
+                    enm_spend_time += infos["current_step"]
+                    enm_lunch_missile_number += len(sim.launch_missiles)
+                    for missile in sim.launch_missiles:
+                        enm_missile_hit_count += int(missile.is_success)
+                    enm_clash_count += int(sim.is_crash)
+                    enm_shot_down_count += int(sim.enemies[0].is_shotdown)
+                    enm_been_shot_down_count += int(sim.is_shotdown)
+                if start == end:
+                    if sim.uid.__eq__("A0100"):
+                        print({sim.uid: {
+                            "avg_combat_time": ego_spend_time/end,
+                            "missile_hits_rate": ego_missile_hit_count/ego_lunch_missile_number,
+                            "avg_distance": ego_distance / ego_spend_time,
+                            "shoot_down_rate": ego_shot_down_count/end,
+                            "survival_rate": (end-ego_clash_count-ego_been_shot_down_count)/end
+                        }})
+                    else:
+                        print({sim.uid: {
+                            "avg_combat_time": enm_spend_time / end,
+                            "missile_hits_rate": enm_missile_hit_count / enm_lunch_missile_number,
+                            "avg_distance": ego_distance / ego_spend_time,
+                            "shoot_down_rate": enm_shot_down_count / end,
+                            "survival_rate": (end - enm_clash_count - enm_been_shot_down_count) / end
+                        }})
+            print(infos)
+            env._create_records = False
+            break
+        bloods = [env.agents[agent_id].bloods for agent_id in env.agents.keys()]
+        print(f"step:{env.current_step}, bloods:{bloods}")
+        enm_obs =  obs[num_agents // 2:, ...]
+        ego_obs =  obs[:num_agents // 2, ...]
+
+
+
+
+    print(episode_rewards)
