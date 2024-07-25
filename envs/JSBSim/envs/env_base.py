@@ -266,6 +266,14 @@ class BaseEnv(gymnasium.Env):
         for agent_id in (self.ego_ids + self.enm_ids)[self.num_agents:]:
             unpack_data[agent_id] = None
         return unpack_data
+
+    def combat_distance(self, plane_name: str):
+        ego_position = self._jsbsims[plane_name].get_position() / 1000
+        distance = 0
+        for sim in self._jsbsims[plane_name].enemies:
+            enm_position = sim.get_position() / 1000
+            distance += np.linalg.norm(ego_position - enm_position)
+        return distance
 # 这是一个名为BaseEnv的类，它是一个RL环境，用于将JSBSim飞行动力学模块封装为一个可用于强化学习的环境。
 # 该类继承自gymnasium.Env类，并实现了OpenAI Gym环境接口。
 # 该类的主要属性和方法包括：

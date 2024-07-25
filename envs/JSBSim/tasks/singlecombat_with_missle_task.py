@@ -5,7 +5,11 @@ from collections import deque
 from .singlecombat_task import SingleCombatTask, HierarchicalSingleCombatTask
 from ..reward_functions import AltitudeReward, PostureReward, MissilePostureReward, EventDrivenReward, ShootPenaltyReward
 from ..core.simulatior import MissileSimulator
+from ..reward_functions.angel_reward import AngelReward
+from ..reward_functions.distance_reward import DistanceReward
+from ..reward_functions.height_reward import HeightReward
 from ..reward_functions.my_shoot_penalty_reward import MyShootPenaltyReward
+from ..reward_functions.velocity_reward import VelocityReward
 from ..utils.utils import LLA2NEU, get_AO_TA_R
 
 
@@ -125,7 +129,6 @@ class SingleCombatDodgeMissileTask(SingleCombatTask):
                 self.remaining_missiles[agent_id] -= 1
                 self._last_shoot_time[agent_id] = env.current_step
 
-
 class HierarchicalSingleCombatDodgeMissileTask(HierarchicalSingleCombatTask, SingleCombatDodgeMissileTask):
 
     def __init__(self, config: str):
@@ -156,7 +159,6 @@ class HierarchicalSingleCombatDodgeMissileTask(HierarchicalSingleCombatTask, Sin
 
     def step(self, env):
         return SingleCombatDodgeMissileTask.step(self, env)
-
 
 class SingleCombatShootMissileTask(SingleCombatDodgeMissileTask):
     def __init__(self, config):
@@ -205,17 +207,30 @@ class SingleCombatShootMissileTask(SingleCombatDodgeMissileTask):
                 #创建就会发射
                 self.remaining_missiles[agent_id] -= 1
 
-
 class HierarchicalSingleCombatShootTask(HierarchicalSingleCombatTask, SingleCombatShootMissileTask):#1v1/ShootMissile/HierarchySelfplay
+
     def __init__(self, config: str):
         HierarchicalSingleCombatTask.__init__(self, config)
         self.reward_functions = [
-            PostureReward(self.config),
-            AltitudeReward(self.config),
             EventDrivenReward(self.config),
-            #ShootPenaltyReward(self.config),
-            MyShootPenaltyReward(self.config)
+            #MyShootPenaltyReward(self.config),
+            AngelReward(self.config),
+            HeightReward(self.config),
+            VelocityReward(self.config),
+            DistanceReward(self.config)
         ]
+        self.max_attack_angle = getattr(self.config, "max_attack_angle", 35)
+        self.max_attack_distance = getattr(self.config, "max_attack_distance", 12000)
+        self.min_attack_interval = getattr(self.config, "min_attack_interval", 25)
+        self.no_esp_angle = getattr(self.config, "no_esp_angle", 20)
+        self.max_search_angle = getattr(self.config, "max_search_angle", 65)
+        self.optimal_air_combat_speed = getattr(self.config, "optimal_air_combat_speed", 320)
+        self.max_missile_attack_distance = getattr(self.config, "max_missile_attack_distance", 14000) #Dmmax
+        self.max_radar_search_distance = getattr(self.config, "max_radar_search_distance", 25000) #Drmax
+        self.max_missile_no_esp_distance = getattr(self.config, "max_missile_no_esp_distance", 10000) #Dmkmax
+        self.min_missile_no_esp_distance = getattr(self.config, "min_missile_no_esp_distance", 6000) #Dmkmin
+        self.min_missile_attack_distance = getattr(self.config, "min_missile_attack_distance", 4000) #Dmmin
+        self.optimal_air_combat_height = getattr(self.config, "optimal_air_combat_height", 20000)
 
     def load_observation_space(self):
         return SingleCombatShootMissileTask.load_observation_space(self)
