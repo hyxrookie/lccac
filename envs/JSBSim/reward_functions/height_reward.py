@@ -13,8 +13,9 @@ class HeightReward(BaseRewardFunction):
 
     def get_reward(self, task, env, agent_id):
         ego_z = env.agents[agent_id].get_position()[-1] / 1000
-        enm_z = env.agents[agent_id].enemies[0].position[-1] / 1000
-        opt_height = task.optiaml_air_combat_height
+        enm_z = env.agents[agent_id].enemies[0].get_position()[-1] / 1000
+        opt_height = task.optimal_air_combat_height
+        Th=0
         if ego_z >= opt_height:
             Th = math.exp(-(ego_z-opt_height)/opt_height)
         elif  enm_z <= ego_z < opt_height:

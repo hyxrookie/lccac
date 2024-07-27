@@ -28,11 +28,11 @@ render = True
 ego_policy_index = '4'
 enm_policy_index = '4'
 episode_rewards = 0
-ego_run_dir = r"D:\CloseAirCombat-master\scripts\results\SingleCombat\1v1\ShootMissile\HierarchySelfplay\ppo\v1\run1"
-enm_run_dir = r"D:\CloseAirCombat-master\scripts\results\SingleCombat\1v1\ShootMissile\HierarchySelfplay\ppo\v1\run1"
+ego_run_dir = r"D:\lcCAC\cac\scripts\results\SingleCombat\1v1\ShootMissile\HierarchySelfplay\ppo\v1\wandb\run-20240726_170502-exr3533w\files"
+enm_run_dir = r"D:\lcCAC\cac\scripts\results\SingleCombat\1v1\ShootMissile\HierarchySelfplay\ppo\v1\wandb\run-20240726_170502-exr3533w\files"
 experiment_name = ego_run_dir.split('\\')[-4]
 
-env = SingleCombatEnv("1v1/ShootMissile/HierarchySelfplay",0)
+env = SingleCombatEnv("1v1/ShootMissile/HierarchySelfplay")
 env.seed(0)
 args = Args()
 

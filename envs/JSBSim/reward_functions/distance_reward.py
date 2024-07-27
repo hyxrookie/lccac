@@ -23,7 +23,7 @@ class DistanceReward(BaseRewardFunction):
                                      enm.get_velocity()])
             AO, TA, D = get_AO_TA_R(ego_feature, enm_feature)
 
-            info = self.check_relative_information(task,D)
+            # info = self.check_relative_information(task,D)
             if(Drmax<D):
                 reward = 0.2 * math.exp(-(D-Drmax)/Drmax);
             elif(Dmmax<D<=Drmax):
