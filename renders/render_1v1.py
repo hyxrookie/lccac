@@ -31,6 +31,7 @@ episode_rewards = 0
 ego_run_dir = r"D:\lcCAC\cac\scripts\results\SingleCombat\1v1\ShootMissile\HierarchySelfplay\ppo\v1\wandb\run-20240726_170502-exr3533w\files"
 enm_run_dir = r"D:\lcCAC\cac\scripts\results\SingleCombat\1v1\ShootMissile\HierarchySelfplay\ppo\v1\wandb\run-20240726_170502-exr3533w\files"
 experiment_name = ego_run_dir.split('\\')[-4]
+file_name = ego_run_dir.split('\\')[-2]
 
 env = SingleCombatEnv("1v1/ShootMissile/HierarchySelfplay")
 env.seed(0)
@@ -68,7 +69,8 @@ while start != end:
     episode_rewards = 0
     obs = env.reset()
     if render:
-        env.render(mode='txt', filepath=f'{experiment_name}task{ego_policy_index}vs{enm_policy_index}version{start}.txt.acmi')
+        env.render(mode='txt',
+                   filepath=f'{experiment_name}_task_{ego_policy_index}vs{enm_policy_index}_in_({file_name})_version_{start}.txt.acmi')
     ego_rnn_states = np.zeros((1, 1, 128), dtype=np.float32)
     masks = np.ones((num_agents // 2, 1))
     enm_obs =  obs[num_agents // 2:, :]
@@ -93,7 +95,8 @@ while start != end:
 
         episode_rewards += rewards
         if render:
-            env.render(mode='txt', filepath=f'{experiment_name}task{ego_policy_index}vs{enm_policy_index}version{start}.txt.acmi')
+            env.render(mode='txt',
+                       filepath=f'{experiment_name}_task_{ego_policy_index}vs{enm_policy_index}_in_({file_name})_version_{start}.txt.acmi')
         if dones.all():
             for sim in env.agents.values():
                 if sim.uid.__eq__("A0100"):

@@ -213,7 +213,7 @@ class HierarchicalSingleCombatShootTask(HierarchicalSingleCombatTask, SingleComb
         HierarchicalSingleCombatTask.__init__(self, config)
         self.reward_functions = [
             EventDrivenReward(self.config),
-            #MyShootPenaltyReward(self.config),
+            MyShootPenaltyReward(self.config),
             AngelReward(self.config),
             HeightReward(self.config),
             VelocityReward(self.config),
