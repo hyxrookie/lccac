@@ -41,7 +41,7 @@ class MyShootPenaltyReward(BaseRewardFunction):
     def get_reward_base_on_relative_information(self , info,theta,D):
         reward=0;
         if info==1:
-            reward=-10
+            reward=-5
         elif info==2:
             reward=math.exp(-(theta-self.theta_mkmax)/self.theta_mkmax)+\
                    math.exp( - abs(2*D-(self.D_mmax+self.D_mmin))/(self.D_mmin+self.D_mmax) )-2

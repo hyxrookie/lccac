@@ -1,11 +1,29 @@
+import random
+
 import gymnasium
+import torch
 from gymnasium.utils import seeding
 import numpy as np
 from typing import Dict, Any, Tuple
+from gymnasium import spaces
+from algorithms.ppo.ppo_actor import PPOActor
 from ..core.simulatior import AircraftSimulator, BaseSimulator
 from ..tasks.task_base import BaseTask
-from ..utils.utils import parse_config
-
+from ..utils.utils import parse_config,get_AO_TA_R,LLA2NEU
+from ..core.catalog import Catalog as c
+import xlwt
+class Args:
+    def __init__(self) -> None:
+        self.gain = 0.01
+        self.hidden_size = '128 128'
+        self.act_hidden_size = '128 128'
+        self.activation_id = 1
+        self.use_feature_normalization = False
+        self.use_recurrent_policy = True
+        self.recurrent_hidden_size = 128
+        self.recurrent_hidden_layers = 1
+        self.tpdv = dict(dtype=torch.float32, device=torch.device('cpu'))
+        self.use_prior = True
 
 class BaseEnv(gymnasium.Env):
     """
@@ -21,14 +39,70 @@ class BaseEnv(gymnasium.Env):
 
     def __init__(self, config_name: str):
         # basic args
+        self.missile_agent = None
+        self.Pre_SE = 0
+        self.swaprun = 0
+        self.height_dealt_max = 1
+        self.previous_pitch = 0
+        self.previous_roll = 0
+        self.previous_side_flage = 0
+        self.previous_TA = 0
+        self.current_step = 0
+        self.ego_sum_SE = 0
+        self.enm_sum_SE = 0
+        self.EAWR = {"A0100":0,"B0100":0}
+        self.previous_height_dealt = 0
+        self.previous_dis_max = 1
+        self.previous_distance = 0
+        self.previous_AO = 0
+        self.previous_V = 0
         self.config = parse_config(config_name)
         self.max_steps = getattr(self.config, 'max_steps', 100)  # type: int
         self.sim_freq = getattr(self.config, 'sim_freq', 60)  # type: int
         self.agent_interaction_steps = getattr(self.config, 'agent_interaction_steps', 12)  # type: int
         self.center_lon, self.center_lat, self.center_alt = \
-            getattr(self.config, 'battle_field_center', (120.0, 60.0, 0.0))
+            getattr(self.config, 'battle_field_center', (123.4, 26.0, 0.0))
         self._create_records = False
+        self.args = Args()
         self.load()
+        # self.wk = xlwt.Workbook(encoding='utf8')
+        # self.worksheet = self.wk.add_sheet('Sheet2')
+        # self.worksheet.write(0, 0, 'step')
+        # self.worksheet.write(0, 1, '距离')
+        # self.worksheet.write(0, 2, '距离变化')
+        # self.worksheet.write(0, 3, '角度变化')
+        # self.worksheet.write(0, 4, '方位角')
+        # self.worksheet.write(0, 5, '偏航角优势奖励')
+        # self.worksheet.write(0, 6, '攻击窗口奖励')
+        # self.worksheet.write(0, 7, '比能量')
+        # self.worksheet.write(0, 8, '比能量变化')
+        # self.worksheet.write(0, 9, '理想比能量')
+        # self.worksheet.write(0, 10, '能量奖励')
+        # self.worksheet.write(0, 11, '敌机AO')
+        # self.worksheet.write(0, 12, '敌机AO变化')
+        # self.worksheet.write(0, 13, '躲避敌机攻击窗口奖励')
+        # self.worksheet.write(0, 14, '事件奖励')
+        # self.worksheet.write(0, 0, 'step')
+        # self.worksheet.write(0, 1, 'ego altitude')
+        # self.worksheet.write(0, 2, 'ego_roll_sin')
+        # self.worksheet.write(0, 3, 'ego_roll_cos')
+        # self.worksheet.write(0, 4, 'ego_pitch_sin')
+        # self.worksheet.write(0, 5, 'ego_pitch_cos')
+        # self.worksheet.write(0, 6, 'ego v_n_x')
+        # self.worksheet.write(0, 7, 'ego v_e_y')
+        # self.worksheet.write(0, 8, 'ego v_d_z')
+        # self.worksheet.write(0, 9, 'ego vc')
+        # self.worksheet.write(0, 10, 'v body')
+        # self.worksheet.write(0, 11, 'height')
+        # self.worksheet.write(0, 12, 'AO')
+        # self.worksheet.write(0, 13, 'TA')
+        # self.worksheet.write(0, 14, 'R')
+        # self.worksheet.write(0, 15, 'side_flag')
+        # self.worksheet.write(0, 16, 'action 1')
+        # self.worksheet.write(0, 17, 'action 2')
+        # self.worksheet.write(0, 18, 'action 3')
+        # self.worksheet.write(0, 19, 'action 4')
+
 
     @property
     def num_agents(self) -> int:
@@ -52,12 +126,18 @@ class BaseEnv(gymnasium.Env):
 
     def load(self):
         self.load_task()
+        # self.load_missile_agent()
         self.load_simulator()
         self.seed()
 
     def load_task(self):
         self.task = BaseTask(self.config)
 
+
+    def load_missile_agent(self):
+        self.missile_agent = PPOActor(self.args, spaces.Box(low=-10, high=10., shape=(21,)), spaces.Tuple([spaces.MultiDiscrete([3, 5, 3]), spaces.Discrete(2)]), device=torch.device("cuda"))
+        self.missile_agent.load_state_dict(torch.load(r"D:\2023\lc\lcCAC\cac\scripts\results\SingleCombat\1v1\ShootMissile\Selfplay\ppo\missile\all" + f"/actor_499.pt"))
+        self.missile_agent.eval()
     def load_simulator(self):
         self._jsbsims = {}     # type: Dict[str, AircraftSimulator]
         for uid, config in self.config.aircraft_configs.items():
@@ -66,9 +146,9 @@ class BaseEnv(gymnasium.Env):
                 color=config.get("color", "Red"),
                 model=config.get("model", "f16"),
                 init_state=config.get("init_state"),
-                origin=getattr(self.config, 'battle_field_center', (120.0, 60.0, 0.0)),
+                origin=getattr(self.config, 'battle_field_center', (123.4, 26.0, 0.0)),
                 sim_freq=self.sim_freq,
-                num_missiles=config.get("missile", 0))
+                num_missiles=config.get("missile", 1))
         # Different teams have different uid[0]
         _default_team_uid = list(self._jsbsims.keys())[0][0]
         self.ego_ids = [uid for uid in self._jsbsims.keys() if uid[0] == _default_team_uid]
@@ -89,6 +169,14 @@ class BaseEnv(gymnasium.Env):
     def add_temp_simulator(self, sim: BaseSimulator):
         self._tempsims[sim.uid] = sim
 
+    def combat_distance(self,plane_name:str):
+        ego_position = self._jsbsims[plane_name].get_position() / 1000
+        distance = 0
+        for sim in self._jsbsims[plane_name].enemies:
+            enm_position = sim.get_position() / 1000
+            distance += np.linalg.norm(ego_position-enm_position)
+        return distance
+
     def reset(self) -> np.ndarray:
         """Resets the state of the environment and returns an initial observation.
 
@@ -96,7 +184,17 @@ class BaseEnv(gymnasium.Env):
             obs (np.ndarray): initial observation
         """
         # reset sim
+        # self.wk.save('reward_anlysis.xlsx')
+        self.previous_V = 0
+        self.previous_distance = 0
+        self.previous_AO = 0
         self.current_step = 0
+        self.previous_dis_max = 1
+        self.previous_height_dealt = 0
+        self.height_dealt_max = 1
+        self.previous_TA = 0
+        self.previous_side_flage = 0
+        self.Pre_SE = 0
         for sim in self._jsbsims.values():
             sim.reload()
         self._tempsims.clear()
@@ -105,8 +203,7 @@ class BaseEnv(gymnasium.Env):
         obs = self.get_obs()
         return self._pack(obs)
 
-    def step(self, action: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray, dict]:#返回值类型是四元组，最后一个元素是字典类型，相当于Java中的map
-        #运行环境动态的一个时间步。它接受一个动作作为输入，并返回代理的观察、奖励、完成标志和辅助信息
+    def step(self, action: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray, dict]:
         """Run one timestep of the environment's dynamics. When end of
         episode is reached, you are responsible for calling `reset()`
         to reset this environment's observation. Accepts an action and
@@ -122,23 +219,23 @@ class BaseEnv(gymnasium.Env):
                 dones: whether the episode has ended, in which case further step() calls are undefined
                 info: auxiliary information
         """
-        #print("env_base step")#可注释掉
         self.current_step += 1
         info = {"current_step": self.current_step}
         # apply actions
-        action = self._unpack(action)#解包数据，为了使敌机与我机各自获得各自的动作
-        for agent_id in self.agents.keys():#敌我两架飞机分别处理
-            # 这里会将飞机的动作进行标准化处理，对于带导弹任务，执行HierarchicalSingleCombatShootTask中的normalize_action，
-            # self._shoot_action[agent_id] = action[-1]将最后一维动作作为发射动作
+        action = self._unpack(action)
+        for agent_id in self.agents.keys():
             a_action = self.task.normalize_action(self, agent_id, action[agent_id])
+            self.agents[agent_id].action_pre = a_action
             self.agents[agent_id].set_property_values(self.task.action_var, a_action)
         # run simulation
-        for _ in range(self.agent_interaction_steps):#agent_interaction_steps=12，一个时间步执行12个步长，每个步长0.2s
+        for _ in range(self.agent_interaction_steps):
             for sim in self._jsbsims.values():
                 sim.run()
             for sim in self._tempsims.values():
                 sim.run()
-        self.task.step(self)#采取对应任务的step
+        temp_EAWR = self.task.step(self)
+        for key,value in temp_EAWR.items():
+            self.EAWR[key] = self.EAWR[key]+1 if value else self.EAWR[key]
 
         obs = self.get_obs()
 
@@ -152,6 +249,26 @@ class BaseEnv(gymnasium.Env):
             reward, info = self.task.get_reward(self, agent_id, info)
             rewards[agent_id] = [reward]
 
+        ego_obs_list = np.array(self._jsbsims['A0100'].get_property_values(self.task.state_var))
+        enm_obs_list = np.array(self._jsbsims['A0100'].enemies[0].get_property_values(self.task.state_var))
+
+
+        ego_cur_ned = LLA2NEU(*ego_obs_list[:3], 123.4, 26.0, 0.0)
+        enm_cur_ned = LLA2NEU(*enm_obs_list[:3], 123.4, 26.0, 0.0)
+        ego_feature = np.array([*ego_cur_ned, *(ego_obs_list[6:9])])
+        enm_feature = np.array([*enm_cur_ned, *(enm_obs_list[6:9])])
+
+        self.previous_height_dealt = abs(ego_obs_list[2]-enm_obs_list[2])
+        self.previous_V = ego_obs_list[12]
+        self.previous_roll = ego_obs_list[3]
+        self.previous_pitch = ego_obs_list[4]
+        self.Pre_SE = (ego_obs_list[12]**2)/19.62 + ego_obs_list[2]
+
+        self.ego_sum_SE += self.Pre_SE
+        self.enm_sum_SE += (enm_obs_list[12]**2)/19.62 + enm_obs_list[2]
+        self.previous_AO, self.previous_TA, self.previous_distance, self.previous_side_flage = get_AO_TA_R(ego_feature,
+                                                                                                           enm_feature,
+                                                                                                           return_side=True)
         return self._pack(obs), self._pack(rewards), self._pack(dones), info
 
     def get_obs(self):
@@ -257,7 +374,7 @@ class BaseEnv(gymnasium.Env):
         # only return data that belongs to RL agents
         return data[:self.num_agents, ...]
 
-    def _unpack(self, data: np.ndarray) -> Dict[str, Any]:#解包数据
+    def _unpack(self, data: np.ndarray) -> Dict[str, Any]:
         """Unpack grouped np.ndarray into seperated key-value dict"""
         assert isinstance(data, (np.ndarray, list, tuple)) and len(data) == self.num_agents
         # unpack data in the same order to packing process
@@ -266,36 +383,3 @@ class BaseEnv(gymnasium.Env):
         for agent_id in (self.ego_ids + self.enm_ids)[self.num_agents:]:
             unpack_data[agent_id] = None
         return unpack_data
-
-    def combat_distance(self, plane_name: str):
-        ego_position = self._jsbsims[plane_name].get_position() / 1000
-        distance = 0
-        for sim in self._jsbsims[plane_name].enemies:
-            enm_position = sim.get_position() / 1000
-            distance += np.linalg.norm(ego_position - enm_position)
-        return distance
-# 这是一个名为BaseEnv的类，它是一个RL环境，用于将JSBSim飞行动力学模块封装为一个可用于强化学习的环境。
-# 该类继承自gymnasium.Env类，并实现了OpenAI Gym环境接口。
-# 该类的主要属性和方法包括：
-# 属性：
-# - metadata: 环境的元数据，包括支持的渲染模式。
-# - num_agents: 环境中代理(agent)的数量。
-# - observation_space: 观测空间，描述了代理观测的状态。
-# - action_space: 动作空间，描述了代理可以执行的动作。
-# - agents: 代理字典，包含环境中的所有飞行器模拟器。
-# - time_interval: 代理交互步骤之间的时间间隔。
-# 方法：
-# - load: 加载任务和飞行器模拟器。
-# - load_task: 加载任务，创建一个BaseTask对象。
-# - load_simulator: 加载飞行器模拟器，创建AircraftSimulator对象，并将其存储在字典_jsbsims中。
-# - add_temp_simulator: 添加临时模拟器。
-# - reset: 重置环境的状态，并返回初始观测。
-# - step: 执行环境的动力学模拟，接受一个动作作为输入，并返回观测、奖励、终止信号和其他信息。
-# - get_obs: 返回所有代理的观测信息。
-# - get_state: 返回全局状态。
-# - close: 清理环境的对象。
-# - render: 渲染环境，支持输出为txt文件。
-# - seed: 设置环境的随机数种子。
-# - _pack: 将分离的键-值字典打包为分组的np.ndarray。
-# - _unpack: 将分组的np.ndarray解包为分离的键-值字典。
-# 需要注意的是，该类依赖其他模块和类，如AircraftSimulator、BaseSimulator、BaseTask等，这些模块和类在代码中的相对路径已经给出。

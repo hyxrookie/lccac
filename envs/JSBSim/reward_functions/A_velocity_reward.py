@@ -9,12 +9,11 @@ class VelocityReward(BaseRewardFunction):
     def __init__(self, config):
         super().__init__(config)
 
-
-
     def get_reward(self, task, env, agent_id):
-        ego_real_speed = env.agents[agent_id].get_property_value(c.velocities_vt_fps) * change
-        enm_real_speed = env.agents[agent_id].enemies[0].get_property_value(c.velocities_vt_fps) * change
-        V_0 = task.optimal_air_combat_speed
+        ego_real_speed = env.agents[agent_id].get_property_value(c.velocities_vt_fps)
+        enm_real_speed = env.agents[agent_id].enemies[0].get_property_value(c.velocities_vt_fps)
+        V_0 = 270
+        T_v = 0
         if V_0 > 1.5 * enm_real_speed:
             if ego_real_speed > V_0:
                 T_v = math.exp(-(ego_real_speed - V_0)/V_0)

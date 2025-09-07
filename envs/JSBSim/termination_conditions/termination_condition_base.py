@@ -10,7 +10,6 @@ class BaseTerminationCondition(ABC):
 
     def __init__(self, config):
         self.config = config
-
     @abstractmethod
     def get_termination(self, task, env, agent_id, info={}):
         """
@@ -24,6 +23,7 @@ class BaseTerminationCondition(ABC):
         Returns:
             (tuple): (done, success, info)
         """
+
         raise NotImplementedError
 
     def log(self, msg):

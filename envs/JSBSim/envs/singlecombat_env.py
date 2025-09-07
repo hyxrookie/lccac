@@ -33,14 +33,21 @@ class SingleCombatEnv(BaseEnv):
             raise NotImplementedError(f"Unknown taskname: {taskname}")
 
     def reset(self) -> np.ndarray:#覆盖env_base中的reset方法
+        self.previous_distance = 0
+        self.previous_AO = 0
         self.current_step = 0
+        self.previous_TA = 0
+        self.previous_side_flage = 0
+        self.current_step = 0
+        self.swaprun = random.randint(0, 1)
+        # self.reset_simulators(self.swaprun)
         self.reset_simulators()
         self.task.reset(self)
         obs = self.get_obs()
         return self._pack(obs)
 
     def reset_simulators(self):
-        # switch side
+        # #switch side
         # if self.init_states is None:
         #     self.init_states = [sim.init_state.copy() for sim in self.agents.values()]
         # # self.init_states[0].update({
@@ -53,12 +60,30 @@ class SingleCombatEnv(BaseEnv):
         #     sim.reload(init_states[idx])
         for sim in self.agents.values():
             sim.reload({
-                "ic_long_gc_deg": random.uniform(119.8, 120.2),
-                "ic_lat_geod_deg": random.uniform(59.8, 60.2),
-                "ic_h_sl_ft": random.randint(17000, 23000),
-                "ic_psi_true_deg": random.uniform(0, 360),
-                "ic_u_fps": random.randint(800, 1000),
+                "ic_long_gc_deg": 123.4 + random.uniform(-0.4, 0.4),
+                "ic_lat_geod_deg": 25.5 + random.uniform(-0.9, 0.9),
+                "ic_h_sl_ft": random.randint(5000, 10000) * 3.2808,
+                "ic_psi_true_deg": random.randint(0, 360),
+                "ic_u_fps": random.randint(100, 300) * 3.2808,
             })
+            # else:
+            #     if swaprun == 0:
+            #         sim.reload({
+            #             "ic_long_gc_deg": 123.4,
+            #                 "ic_lat_geod_deg": 25.5 + random.uniform(0.7, 1.5),
+            #                 "ic_h_sl_ft": random.randint(5000, 10000) * 3.2808,
+            #                 "ic_psi_true_deg": 180,
+            #                 "ic_u_fps": random.randint(100, 300) * 3.2808,
+            #         })
+            #     else:
+            #         sim.reload({
+            #             "ic_long_gc_deg": 123.4,
+            #             "ic_lat_geod_deg": 25.50,
+            #             "ic_h_sl_ft": random.randint(5000, 10000) * 3.2808,
+            #             "ic_psi_true_deg": 0,
+            #             "ic_u_fps": random.randint(100, 300) * 3.2808,
+            #         })
+
 
 
         self._tempsims.clear()

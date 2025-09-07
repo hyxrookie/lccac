@@ -226,3 +226,7 @@ class JSBSimRunner(Runner):
         torch.save(policy_actor_state_dict, str(self.save_dir) + '/actor_latest.pt')
         policy_critic_state_dict = self.policy.critic.state_dict()
         torch.save(policy_critic_state_dict, str(self.save_dir) + '/critic_latest.pt')
+        if episode % 100 == 0:
+            policy_actor_state_dict = self.policy.actor.state_dict()
+            torch.save(policy_actor_state_dict, str(self.save_dir) + f'/actor_{episode/100}.pt')
+

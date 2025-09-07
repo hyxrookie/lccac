@@ -114,6 +114,7 @@ def main(args):
         os.makedirs(str(run_dir))
 
     # wandb
+    all_args.use_wandb = False
     if all_args.use_wandb:
         run = wandb.init(config=all_args,
                          project=all_args.env_name,
@@ -178,24 +179,24 @@ if __name__ == "__main__":
     main([
         "--env-name", "SingleCombat",
         "--algorithm-name", "ppo",
-        "--scenario-name", "1v1/ShootMissile/HierarchySelfplay",
-        "--experiment-name", "v1",
+        "--scenario-name", "1v1/NoWeapon/HierarchySelfplay",
+        "--experiment-name", "v2",
         "--seed", "1",
         "--n-training-threads", "1",
-        "--n-rollout-threads", "8",
+        "--n-rollout-threads", "16",
         "--cuda",
         "--log-interval", "1",
         "--save-interval", "1",
-        "--use-selfplay",
+        "--use-selfplay", "True"
         "--selfplay-algorithm", "fsp",
         "--n-choose-opponents", "1",
-        "--use-eval",
+        "--use-eval", 'True'
         "--n-eval-rollout-threads", "1",
         "--eval-interval", "1",
         "--eval-episodes", "1",
         "--num-mini-batch", "5",
-        "--buffer-size", "1000",
-        "--num-env-steps", "5000000",
+        "--buffer-size", "5000",
+        "--num-env-steps", "100000000",
         "--lr", "3e-4",
         "--gamma", "0.99",
         "--ppo-epoch", "4",
@@ -207,8 +208,8 @@ if __name__ == "__main__":
         "--recurrent-hidden-size", "128",
         "--recurrent-hidden-layers", "1",
         "--data-chunk-length", "8",
-        "--user-name", "cymcym",
-        "--use-wandb",
-        "--wandb-name", "cumtbcym-org",
-        "--use-prior"
+        "--user-name", "lc",
+        "--use-wandb", "False"
+        "--wandb-name", "lc-org",
+        "--use-prior",
     ])

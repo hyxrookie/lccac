@@ -3,14 +3,12 @@ from gymnasium import spaces
 from collections import deque
 
 from .singlecombat_task import SingleCombatTask, HierarchicalSingleCombatTask
-from ..reward_functions import AltitudeReward, PostureReward, MissilePostureReward, EventDrivenReward, ShootPenaltyReward
+from ..reward_functions import  EventDrivenReward,AttackwindowReward,DogdeAttackReward,EnergyReward
 from ..core.simulatior import MissileSimulator
-from ..reward_functions.angel_reward import AngelReward
-from ..reward_functions.distance_reward import DistanceReward
-from ..reward_functions.height_reward import HeightReward
-from ..reward_functions.my_shoot_penalty_reward import MyShootPenaltyReward
-from ..reward_functions.velocity_reward import VelocityReward
 from ..utils.utils import LLA2NEU, get_AO_TA_R
+from envs.JSBSim.reward_functions.ego_placeholder_reward import EgoPlaceholderReward
+from envs.JSBSim.reward_functions.enm_placeholder_reward import EnmPlaceholderReward
+
 
 
 class SingleCombatDodgeMissileTask(SingleCombatTask):
@@ -22,15 +20,18 @@ class SingleCombatDodgeMissileTask(SingleCombatTask):
         self.max_attack_angle = getattr(self.config, 'max_attack_angle', 180)
         self.max_attack_distance = getattr(self.config, 'max_attack_distance', np.inf)
         self.min_attack_interval = getattr(self.config, 'min_attack_interval', 125)
+        self.max_missile_attack_distance = getattr(self.config, 'max_missile_attack_distance')
+        self.min_missile_attack_distance = getattr(self.config, 'min_missile_attack_distance')
+
         self.reward_functions = [
-            PostureReward(self.config),
-            MissilePostureReward(self.config),
-            AltitudeReward(self.config),
-            EventDrivenReward(self.config)
+            AttackwindowReward(self.config),
+            DogdeAttackReward(self.config),
+            EnergyReward(self.config),
+            EventDrivenReward(self.config)  # 事件驱动奖励
         ]
 
     def load_observation_space(self):
-        self.observation_space = spaces.Box(low=-10, high=10., shape=(21,))
+        self.observation_space = spaces.Box(low=-10, high=10., shape=(15,))
 
     def get_obs(self, env, agent_id):
         """
@@ -62,7 +63,7 @@ class SingleCombatDodgeMissileTask(SingleCombatTask):
             - [19] relative distance
             - [20] side flag
         """
-        norm_obs = np.zeros(21)
+        norm_obs = np.zeros(15)
         ego_obs_list = np.array(env.agents[agent_id].get_property_values(self.state_var))
         enm_obs_list = np.array(env.agents[agent_id].enemies[0].get_property_values(self.state_var))
         # (0) extract feature: [north(km), east(km), down(km), v_n(mh), v_e(mh), v_d(mh)]
@@ -76,18 +77,22 @@ class SingleCombatDodgeMissileTask(SingleCombatTask):
         norm_obs[2] = np.cos(ego_obs_list[3])
         norm_obs[3] = np.sin(ego_obs_list[4])
         norm_obs[4] = np.cos(ego_obs_list[4])
-        norm_obs[5] = ego_obs_list[9] / 340
-        norm_obs[6] = ego_obs_list[10] / 340
-        norm_obs[7] = ego_obs_list[11] / 340
+        norm_obs[5] = ego_obs_list[6] / 340
+        norm_obs[6] = ego_obs_list[7] / 340
+        norm_obs[7] = ego_obs_list[8] / 340
         norm_obs[8] = ego_obs_list[12] / 340
         # (2) relative enm info
         ego_AO, ego_TA, R, side_flag = get_AO_TA_R(ego_feature, enm_feature, return_side=True)
-        norm_obs[9] = (enm_obs_list[9] - ego_obs_list[9]) / 340
+        norm_obs[9] = (enm_obs_list[6] - ego_obs_list[6]) / 340
         norm_obs[10] = (enm_obs_list[2] - ego_obs_list[2]) / 1000
+
+        # print(f'R:{R}')
         norm_obs[11] = ego_AO
         norm_obs[12] = ego_TA
         norm_obs[13] = R / 10000
+        # print(f'r:{R}')
         norm_obs[14] = side_flag
+        self.R_dis = R
         # (3) relative missile info
         missile_sim = env.agents[agent_id].check_missile_warning()
         if missile_sim is not None:
@@ -135,10 +140,10 @@ class HierarchicalSingleCombatDodgeMissileTask(HierarchicalSingleCombatTask, Sin
         HierarchicalSingleCombatTask.__init__(self, config)
 
         self.reward_functions = [
-            PostureReward(self.config),
-            MissilePostureReward(self.config),
-            AltitudeReward(self.config),
-            EventDrivenReward(self.config)
+            # PostureReward(self.config),
+            # MissilePostureReward(self.config),
+            # AltitudeReward(self.config),
+            # EventDrivenReward(self.config)
         ]
 
     def load_observation_space(self):
@@ -163,16 +168,18 @@ class HierarchicalSingleCombatDodgeMissileTask(HierarchicalSingleCombatTask, Sin
 class SingleCombatShootMissileTask(SingleCombatDodgeMissileTask):
     def __init__(self, config):
         super().__init__(config)
+        self.max_missile_attack_distance = getattr(self.config, 'max_missile_attack_distance')
+        self.min_missile_attack_distance = getattr(self.config, 'min_missile_attack_distance')
 
         self.reward_functions = [
-            PostureReward(self.config),
-            AltitudeReward(self.config),
-            EventDrivenReward(self.config),
-            ShootPenaltyReward(self.config),
+            AttackwindowReward(self.config),
+            DogdeAttackReward(self.config),
+            EnergyReward(self.config),
+            EventDrivenReward(self.config)  # 事件驱动奖励
         ]
 
     def load_observation_space(self):
-        self.observation_space = spaces.Box(low=-10, high=10., shape=(21,))
+        self.observation_space = spaces.Box(low=-10, high=10., shape=(15,))
 
     def load_action_space(self):
         # aileron, elevator, rudder, throttle, shoot control
@@ -182,6 +189,14 @@ class SingleCombatShootMissileTask(SingleCombatDodgeMissileTask):
         return super().get_obs(env, agent_id)
     
     def normalize_action(self, env, agent_id, action):
+        # if agent_id == 'B0100':
+        #     norm_act = np.zeros(4)
+        #     norm_act[0] = action[0] / 20 - 1.
+        #     norm_act[1] = action[1] / 20 - 1.
+        #     norm_act[2] = action[2] / 20 - 1.
+        #     norm_act[3] = action[3] / 58 + 0.4
+        #     return norm_act
+        # else:
         self._shoot_action[agent_id] = action[-1]
         return super().normalize_action(env, agent_id, action[:-1].astype(np.int32))
     
@@ -212,25 +227,15 @@ class HierarchicalSingleCombatShootTask(HierarchicalSingleCombatTask, SingleComb
     def __init__(self, config: str):
         HierarchicalSingleCombatTask.__init__(self, config)
         self.reward_functions = [
-            EventDrivenReward(self.config),
-            MyShootPenaltyReward(self.config),
-            AngelReward(self.config),
-            HeightReward(self.config),
-            VelocityReward(self.config),
-            DistanceReward(self.config)
+            # HeightReward(self.config),  # 高度奖励
+            # QuickApproachReward(self.config),  # 自身态势奖励
+            # AttitudeControlReward(self.config),
+            # EventDrivenReward(self.config)  # 事件驱动奖励
         ]
-        self.max_attack_angle = getattr(self.config, "max_attack_angle", 35)
-        self.max_attack_distance = getattr(self.config, "max_attack_distance", 12000)
-        self.min_attack_interval = getattr(self.config, "min_attack_interval", 25)
-        self.no_esp_angle = getattr(self.config, "no_esp_angle", 20)
-        self.max_search_angle = getattr(self.config, "max_search_angle", 65)
-        self.optimal_air_combat_speed = getattr(self.config, "optimal_air_combat_speed", 320)
-        self.max_missile_attack_distance = getattr(self.config, "max_missile_attack_distance", 14000) #Dmmax
-        self.max_radar_search_distance = getattr(self.config, "max_radar_search_distance", 25000) #Drmax
-        self.max_missile_no_esp_distance = getattr(self.config, "max_missile_no_esp_distance", 10000) #Dmkmax
-        self.min_missile_no_esp_distance = getattr(self.config, "min_missile_no_esp_distance", 6000) #Dmkmin
-        self.min_missile_attack_distance = getattr(self.config, "min_missile_attack_distance", 4000) #Dmmin
+        self.max_missile_attack_distance = getattr(self.config, "max_missile_attack_distance", 14000)
+        self.min_missile_attack_distance = getattr(self.config, "min_missile_attack_distance", 4000)
         self.optimal_air_combat_height = getattr(self.config, "optimal_air_combat_height", 20000)
+        self.R_dis = None
 
     def load_observation_space(self):
         return SingleCombatShootMissileTask.load_observation_space(self)
@@ -245,7 +250,16 @@ class HierarchicalSingleCombatShootTask(HierarchicalSingleCombatTask, SingleComb
     def normalize_action(self, env, agent_id, action):
         """Convert high-level action into low-level action.
         """
-        #这表明 action 数组的最后一个元素是与发射导弹相关的控制信号
+        # 这表明 action 数组的最后一个元素是与发射导弹相关的控制信号
+        # print(f"agent_id:{agent_id}")
+        # if agent_id == 'A0100':
+        #     norm_act = np.zeros(4)
+        #     norm_act[0] = action[0] / 20 - 1.
+        #     norm_act[1] = action[1] / 20 - 1.
+        #     norm_act[2] = action[2] / 20 - 1.
+        #     norm_act[3] = action[3] / 58 + 0.4
+        #     return norm_act
+        # else:
         self._shoot_action[agent_id] = action[-1]
         return HierarchicalSingleCombatTask.normalize_action(self, env, agent_id, action[:-1].astype(np.int32))
         #action[:-1] 是一个切片操作，用于获取列表或数组 action 的一个子集，这个子集包含了 action 中除了最后一个元素之外的所有元素。

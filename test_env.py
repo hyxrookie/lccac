@@ -1,3 +1,5 @@
+import random
+
 import numpy as np
 from envs.JSBSim.envs import SingleCombatEnv, SingleControlEnv, MultipleCombatEnv
 from envs.env_wrappers import SubprocVecEnv, ShareDummyVecEnv, ShareSubprocVecEnv, DummyVecEnv
@@ -67,4 +69,10 @@ def test_multi_env():
 
     envs.close()
 
-test_multi_env()
+# test_multi_env()
+#
+# if __name__ == '__main__':
+#
+#     while(1):
+#         random1 = random.randint(0, 1)
+#         print(random1)

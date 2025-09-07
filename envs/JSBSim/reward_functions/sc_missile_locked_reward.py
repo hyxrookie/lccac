@@ -4,7 +4,7 @@ from .reward_function_base import BaseRewardFunction
 from ..utils.utils import LLA2NEU
 
 
-class EventDrivenReward(BaseRewardFunction):
+class ScMissileLockedReward(BaseRewardFunction):
     """
     EventDrivenReward
     Achieve reward when the following event happens:
@@ -28,23 +28,15 @@ class EventDrivenReward(BaseRewardFunction):
         Returns:
             (float): reward
         """
-
+        enm_id = env._jsbsims[agent_id].enemies[0].uid
         reward = 0
-        # if task.shoot_flag:
-        #     reward -= 20
-        # if np.sum(task.lock_duration[agent_id]) >= task.lock_duration[agent_id].maxlen and task.min_missile_attack_distance <= task.R_dis <= task.max_missile_attack_distance:
-        #     reward += 1
-        if env.agents[agent_id].is_shotdown:
-            reward -= 200
-        elif env.agents[agent_id].is_crash:
-            reward -= 500
+        if np.sum(task.lock_duration[agent_id]) >= task.lock_duration[agent_id].maxlen and task.min_missile_attack_distance <= task.R_dis <= task.max_missile_attack_distance:
+            reward += 10
+        if np.sum(task.lock_duration[enm_id]) >= task.lock_duration[enm_id].maxlen and task.min_missile_attack_distance <= task.R_dis <= task.max_missile_attack_distance:
+            reward -= 10
 
-        # for missile in env.agents[agent_id].launch_missiles:
-        #     if missile.is_success:
-        #         env.agents[agent_id].launch_missiles.remove(missile)
-        #         reward += 200
 
         # if agent_id == "A0100" and env.current_step != 0:
         #     env.worksheet.write(env.current_step, 14, reward)
 
-        return self._process(reward,agent_id)
+        return reward

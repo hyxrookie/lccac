@@ -6,8 +6,8 @@ sim_freq: 60
 agent_interaction_steps: 12 # step 0.2s
 
 # termination config
-max_steps: 1000             # episode length: 200s
-altitude_limit: 2500
+max_steps: 5000             # episode length: 200s
+altitude_limit: 2000
 acceleration_limit_x: 10.0
 acceleration_limit_y: 10.0
 acceleration_limit_z: 10.0
@@ -24,6 +24,7 @@ aircraft_configs: {
       ic_psi_true_deg: 0.0,
       ic_u_fps: 800.0,
     },
+    missile: 2
   },
   B0100: {
     color: Blue,
@@ -35,6 +36,7 @@ aircraft_configs: {
       ic_psi_true_deg: 180.0,
       ic_u_fps: 800.0,
     },
+    missile: 2
   }
 }
 # (lontitude, latitude, altitude)
@@ -43,8 +45,8 @@ battle_field_center: [120.0, 60.0, 0.0]
 # reward config
 PostureReward_scale: 100.0
 PostureReward_potential: true
-PostureReward_orientation_version: v2
-PostureReward_range_version: v3
+PostureReward_orientation_version: v4
+PostureReward_range_version: v4
 PostureReward_target_dist: 3.0
 
 AltitudeReward_safe_altitude: 4.0
@@ -53,3 +55,6 @@ AltitudeReward_Kv: 0.2
 
 EventDrivenReward_scale: 1
 EventDrivenReward_potential: true
+
+max_missile_attack_distance: 25000
+min_missile_attack_distance: 8000

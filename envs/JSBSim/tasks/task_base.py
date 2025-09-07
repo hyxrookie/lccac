@@ -82,10 +82,11 @@ class BaseTask(ABC):
                 reward(float): total reward of the current timestep
                 info(dict): additional info
         """
-        reward = 0.0
+        rewards = 0.0
         for reward_function in self.reward_functions:
-            reward += reward_function.get_reward(self, env, agent_id)
-        return reward, info
+            reward = reward_function.get_reward(self, env, agent_id)
+            rewards += reward
+        return rewards, info
 
     def get_termination(self, env, agent_id, info={}) -> Tuple[bool, dict]:
         """
