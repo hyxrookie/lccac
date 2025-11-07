@@ -117,6 +117,7 @@ class JSBSimRunner(Runner):
         # 采集当前步的数据，包括值、动作、动作日志概率和RNN状态。
         self.policy.prep_rollout()  # 设置ac网络为评估模式  ‘\’是行连接符
         # get_actions用于根据给定的观测值和RNN状态获取动作。
+        # print(self.buffer.obs[step])
         values, actions, action_log_probs, rnn_states_actor, rnn_states_critic \
             = self.policy.get_actions(np.concatenate(self.buffer.obs[step]),
                                       np.concatenate(self.buffer.rnn_states_actor[step]),
@@ -226,7 +227,4 @@ class JSBSimRunner(Runner):
         torch.save(policy_actor_state_dict, str(self.save_dir) + '/actor_latest.pt')
         policy_critic_state_dict = self.policy.critic.state_dict()
         torch.save(policy_critic_state_dict, str(self.save_dir) + '/critic_latest.pt')
-        if episode % 100 == 0:
-            policy_actor_state_dict = self.policy.actor.state_dict()
-            torch.save(policy_actor_state_dict, str(self.save_dir) + f'/actor_{episode/100}.pt')
 

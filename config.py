@@ -228,7 +228,7 @@ def _get_selfplay_config(parser: argparse.ArgumentParser):
             initial ELO for policy performance. (default 1000.0)
     """
     group = parser.add_argument_group("Selfplay parameters")
-    group.add_argument("--use-selfplay", action='store_true', default=True,
+    group.add_argument("--use-selfplay", action='store_true', default=False,
                        help="By default false. If set, use selfplay algorithms.")
     group.add_argument("--selfplay-algorithm", type=str, default='sp', choices=["sp", "fsp", "pfsp"],
                        help="Specifiy the selfplay algorithm (default 'sp')")

@@ -2,6 +2,7 @@ import torch
 import numpy as np
 from gymnasium import spaces
 from typing import Literal
+from typing import Dict, Any, Tuple
 from .task_base import BaseTask
 from ..core.simulatior import AircraftSimulator, MissileSimulator
 from ..core.catalog import Catalog as c
@@ -10,9 +11,12 @@ from ..reward_functions import EventDrivenReward, AttackwindowReward, DogdeAttac
 from ..utils.utils import get_AO_TA_R, get2d_AO_TA_R, in_range_rad, LLA2NEU, get_root_dir, get_AO_TA_R_m
 from ..model.baseline_actor import BaselineActor
 from collections import deque
+from algorithms.ppo.ppo_actor import PPOActor
+from ..reward_functions import ScAngelReward,ScVelocityReward,ScDistanceReward,ScHeightReward,ScEventDrivenReward,ScMissileLockedReward
 from ..reward_functions import BxyEventDrivenReward,BxyPostureReward,BxyAltitudeReward
 from ..reward_functions import DwHeightReward,DwAngelReward,DwDistanceReward,DwEventDrivenReward
 from ..reward_functions import AngelReward,DistanceReward,HeightReward,VelocityReward,EventDrivenReward
+from ..reward_functions import QsDistanceReward,QsHeightReward,QsDodgeAngelReward,QsAttackAngelReward,QsEventDrivenReward
 import xlwt
 
 
@@ -33,16 +37,26 @@ class SingleCombatTask(BaseTask):
             self.baseline_agent = self.load_agent(self.config.baseline_type)
 
         self.reward_functions = [
-            AngelReward(self.config),
-            HeightReward(self.config),
-            DistanceReward(self.config),
-            VelocityReward(self.config),
+            # ScEventDrivenReward(self.config),
+            # ScAngelReward(self.config),
+            # ScHeightReward(self.config),
+            # ScDistanceReward(self.config),
+            # ScVelocityReward(self.config),
+            # QsAttackAngelReward(self.config),
+            # QsDistanceReward(self.config),
+            # QsEventDrivenReward(self.config),
+            # QsHeightReward(self.config),
+            # QsDodgeAngelReward(self.config)
+            # AngelReward(self.config),
+            # HeightReward(self.config),
+            # DistanceReward(self.config),
+            # VelocityReward(self.config),
             # BxyPostureReward(self.config),
             # BxyEventDrivenReward(self.config),
             # BxyAltitudeReward(self.config)
-            # AttackwindowReward(self.config),
+            AttackwindowReward(self.config),
             # DogdeAttackReward(self.config),
-            # EnergyReward(self.config),
+            EnergyReward(self.config),
             EventDrivenReward(self.config)  # 事件驱动奖励
             # DwHeightReward(self.config),
             # DwAngelReward(self.config),
@@ -153,7 +167,7 @@ class SingleCombatTask(BaseTask):
 
         # (2) relative info w.r.t enm state
         ego_AO, ego_TA, R, side_flag = get_AO_TA_R(self.ego_feature, self.enm_feature, return_side=True)
-        norm_obs[9] = (enm_obs_list[9] - ego_obs_list[9]) / 340
+        norm_obs[9] = (np.linalg.norm(enm_obs_list[6:9]) - np.linalg.norm(ego_obs_list[6:9])) / 340
         norm_obs[10] = (enm_obs_list[2] - ego_obs_list[2]) / 1000
         norm_obs[11] = ego_AO
         norm_obs[12] = ego_TA
@@ -175,7 +189,34 @@ class SingleCombatTask(BaseTask):
         norm_obs = np.clip(norm_obs, self.observation_space.low, self.observation_space.high)
 
         return norm_obs
+    def get_reward_sc(self, env, agent_id, info={}) -> Tuple[float, dict]:
+        """
+        Aggregate reward functions
 
+        Args:
+            env: environment instance
+            agent_id: current agent id
+            info: additional info
+
+        Returns:
+            (tuple):
+                reward(float): total reward of the current timestep
+                info(dict): additional info
+        """
+        enm_id = env._jsbsims[agent_id].enemies[0].uid
+        rewards = 0
+        if np.sum(self.lock_duration[agent_id]) >= self.lock_duration[
+            agent_id].maxlen and self.min_missile_attack_distance <= self.R_dis <= self.max_missile_attack_distance:
+            rewards += 10
+            rewards += self.reward_functions[0].get_reward(self, env, agent_id)
+        else:
+            for reward_function in self.reward_functions:
+                reward = reward_function.get_reward(self, env, agent_id)
+                rewards += reward
+        if np.sum(self.lock_duration[enm_id]) >= self.lock_duration[
+            enm_id].maxlen and self.min_missile_attack_distance <= self.R_dis <= self.max_missile_attack_distance:
+            rewards -= 10
+        return rewards, info
     def normalize_action(self, env, agent_id, action):
         """Convert discrete action index into continuous value.
         """
@@ -302,7 +343,11 @@ class SingleCombatTask(BaseTask):
             return 0.0, info
         else:
             self._agent_die_flag[agent_id] = not env.agents[agent_id].is_alive
-            return super().get_reward(env, agent_id, info=info)
+            if self.reward_functions[0].__class__.__name__ == "ScEventDrivenReward":
+                return self.get_reward_sc(env, agent_id, info=info)
+            else:
+                return super().get_reward(env, agent_id, info=info)
+    #     todo:else中return sc模型returnself其他模型returnsuper
 
     def load_agent(self, name):
         if name == 'pursue':
@@ -313,8 +358,137 @@ class SingleCombatTask(BaseTask):
             return DodgeMissileAgent()
         elif name == 'straight':
             return StraightFlyAgent()
+        elif name == 'doge_model':
+            return MyDogeModle()
         else:
             raise NotImplementedError
+
+class Args:
+    def __init__(self) -> None:
+        self.gain = 0.01
+        self.hidden_size = '128 128'
+        self.act_hidden_size = '128 128'
+        self.activation_id = 1
+        self.use_feature_normalization = False
+        self.use_recurrent_policy = True
+        self.recurrent_hidden_size = 128
+        self.recurrent_hidden_layers = 1
+        self.tpdv = dict(dtype=torch.float32, device=torch.device('cpu'))
+        self.use_prior = True
+
+
+class MyDogeModle():
+    def __init__(self):
+        self.args = Args()
+        self.lowlevel_policy = BaselineActor()
+        self.lowlevel_policy.load_state_dict(
+            torch.load(get_root_dir() + '/model/baseline_model.pt', map_location=torch.device('cpu')))
+        self.lowlevel_policy.eval()
+        self.norm_delta_altitude = np.array([0.1, 0, -0.1])
+        self.norm_delta_heading = np.array([-np.pi / 6, -np.pi / 12, 0, np.pi / 12, np.pi / 6])
+        self.norm_delta_velocity = np.array([0.05, 0, -0.05])
+        self.model_path = get_root_dir() + '/model/dodge_model_no_attacker.pt'
+        self.ego_policy = PPOActor(self.args, spaces.Box(low=-10, high=10., shape=(22,))
+                                   , spaces.MultiDiscrete([3, 5, 3]), device=torch.device("cuda"))
+        self.ego_policy.load_state_dict(torch.load(self.model_path, map_location=torch.device('cpu')))
+        self.rnn_states = np.zeros((1, 1, 128))
+        self._inner_rnn_states = np.zeros((1, 1, 128))
+        self.mask = np.ones((1,1))
+        self.state_var = [
+            c.position_long_gc_deg,  # 0. lontitude  (unit: °)
+            c.position_lat_geod_deg,  # 1. latitude   (unit: °)
+            c.position_h_sl_m,  # 2. altitude   (unit: m)
+            c.attitude_roll_rad,  # 3. roll       (unit: rad)
+            c.attitude_pitch_rad,  # 4. pitch      (unit: rad)
+            c.attitude_heading_true_rad,  # 5. yaw        (unit: rad)
+            c.velocities_v_north_mps,  # 6. v_north    (unit: m/s)
+            c.velocities_v_east_mps,  # 7. v_east     (unit: m/s)
+            c.velocities_v_down_mps,  # 8. v_down     (unit: m/s)
+            c.velocities_u_mps,  # 9. v_body_x   (unit: m/s)
+            c.velocities_v_mps,  # 10. v_body_y  (unit: m/s)
+            c.velocities_w_mps,  # 11. v_body_z  (unit: m/s)
+            c.velocities_vc_mps,  # 12. vc        (unit: m/s)
+            c.accelerations_n_pilot_x_norm,  # 13. a_north   (unit: G)
+            c.accelerations_n_pilot_y_norm,  # 14. a_east    (unit: G)
+            c.accelerations_n_pilot_z_norm,  # 15. a_down    (unit: G)
+        ]
+        self.reset()
+
+    def get_observation(self, sim: AircraftSimulator):
+        norm_obs = np.zeros(22)
+        ego_obs_list = np.array(sim.get_property_values(self.state_var))
+        enm_obs_list = np.array(sim.enemies[0].get_property_values(self.state_var))
+        # (0) extract feature: [north(km), east(km), down(km), v_n(mh), v_e(mh), v_d(mh)]
+        ego_cur_ned = LLA2NEU(*ego_obs_list[:3], 120.0, 60.0, 0.0)
+        enm_cur_ned = LLA2NEU(*enm_obs_list[:3], 120.0, 60.0, 0.0)
+        ego_feature = np.array([*ego_cur_ned, *(ego_obs_list[6:9])])
+        enm_feature = np.array([*enm_cur_ned, *(enm_obs_list[6:9])])
+        # (1) ego info normalization
+        norm_obs[0] = ego_obs_list[2] / 5000  # 0. ego altitude   (unit: 5km)
+        norm_obs[1] = np.sin(ego_obs_list[3])  # 1. ego_roll_sin
+        norm_obs[2] = np.cos(ego_obs_list[3])  # 2. ego_roll_cos
+        norm_obs[3] = np.sin(ego_obs_list[4])  # 3. ego_pitch_sin
+        norm_obs[4] = np.cos(ego_obs_list[4])  # 4. ego_pitch_cos
+        norm_obs[5] = ego_obs_list[9] / 340  # 5. ego v_body_x   (unit: mh)
+        norm_obs[6] = ego_obs_list[10] / 340  # 6. ego v_body_y   (unit: mh)
+        norm_obs[7] = ego_obs_list[11] / 340  # 7. ego v_body_z   (unit: mh)
+        norm_obs[8] = ego_obs_list[12] / 340  # 8. ego vc   (unit: mh)
+        # (2) relative info w.r.t enm state
+        ego_AO, ego_TA, R, side_flag = get2d_AO_TA_R(ego_feature, enm_feature, return_side=True)
+        norm_obs[9] = (enm_obs_list[9] - ego_obs_list[9]) / 340
+        norm_obs[10] = (enm_obs_list[2] - ego_obs_list[2]) / 1000
+        norm_obs[11] = ego_AO
+        norm_obs[12] = ego_TA
+        norm_obs[13] = R / 10000
+        norm_obs[14] = side_flag
+        norm_obs[15] = sim.num_missiles-len(sim.launch_missiles)
+        # (3) relative missile info
+        if len(sim.under_missiles) != 0 and sim.under_missiles[0].is_alive:
+            missile_sim = sim.under_missiles[0]
+        else:
+            missile_sim = None
+        if missile_sim is not None:
+            missile_feature = np.concatenate((missile_sim.get_position(), missile_sim.get_velocity()))
+            ego_AO, ego_TA, R, side_flag = get_AO_TA_R(ego_feature, missile_feature, return_side=True)
+            norm_obs[16] = (np.linalg.norm(missile_sim.get_velocity()) - ego_obs_list[9]) / 340
+            norm_obs[17] = (missile_feature[2] - ego_obs_list[2]) / 1000
+            norm_obs[18] = ego_AO
+            norm_obs[19] = ego_TA
+            norm_obs[20] = R / 10000
+            norm_obs[21] = side_flag
+        norm_obs = np.clip(norm_obs, -10, 10)
+        return norm_obs
+
+    def get_action(self, sim: AircraftSimulator):
+        obs = self.get_observation(sim)
+        obs = obs.reshape((1,22))
+        action, _, self.rnn_states = self.ego_policy(obs,self.rnn_states,self.mask)
+        input_obs = np.zeros(12)  # 初始化一个长度为12的零数组，用于存储转换后的观察数据。
+        # (1) delta altitude/heading/velocity 高层动作转换
+        input_obs[0] = self.norm_delta_altitude[action[0][0]]
+        input_obs[1] = self.norm_delta_heading[action[0][1]]
+        input_obs[2] = self.norm_delta_velocity[action[0][2]]
+        # (2) ego info
+        input_obs[3:12] = obs[:,:9]
+        input_obs = np.expand_dims(input_obs, axis=0)
+        # output low-level action
+        _action, _rnn_states = self.lowlevel_policy(input_obs, self._inner_rnn_states)
+        action = _action.detach().cpu().numpy().squeeze(0)
+        self._inner_rnn_states = _rnn_states.detach().cpu().numpy()
+        # normalize low-level action
+        norm_act = np.zeros(4)
+        norm_act[0] = action[0] / 20 - 1.
+        norm_act[1] = action[1] / 20 - 1.
+        norm_act[2] = action[2] / 20 - 1.
+        norm_act[3] = action[3] / 58 + 0.4
+
+        return norm_act
+        action = _action.squeeze().detach().cpu().numpy().squeeze()
+        return action
+
+    def reset(self):
+        self.rnn_states = np.zeros((1, 1, 128))
+        self._inner_rnn_states = np.zeros((1,1,128))
 
 
 class HierarchicalSingleCombatTask(SingleCombatTask):

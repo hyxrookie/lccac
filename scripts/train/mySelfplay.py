@@ -153,8 +153,7 @@ def main(args):
         "run_dir": run_dir
     }
 
-    all_args.use_selfplay = False
-    # all_args.use_prior = False
+
     # run experiments
     if all_args.env_name == "MultipleCombat":
         runner = ShareJSBSimRunner(config)
@@ -214,5 +213,5 @@ if __name__ == "__main__":
         "--use-wandb", "False"
         "--wandb-name", "lc-org",
         "--use-prior",
-        "--model-dir",r"D:\2023\lc\lcCAC\cac\scripts\results\SingleCombat\1v1\NoWeapon\HierarchySelfplay\ppo\v2\no_dogdeattack"
+
     ])

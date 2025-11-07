@@ -138,6 +138,7 @@ class BaseEnv(gymnasium.Env):
         self.missile_agent = PPOActor(self.args, spaces.Box(low=-10, high=10., shape=(21,)), spaces.Tuple([spaces.MultiDiscrete([3, 5, 3]), spaces.Discrete(2)]), device=torch.device("cuda"))
         self.missile_agent.load_state_dict(torch.load(r"D:\2023\lc\lcCAC\cac\scripts\results\SingleCombat\1v1\ShootMissile\Selfplay\ppo\missile\all" + f"/actor_499.pt"))
         self.missile_agent.eval()
+
     def load_simulator(self):
         self._jsbsims = {}     # type: Dict[str, AircraftSimulator]
         for uid, config in self.config.aircraft_configs.items():

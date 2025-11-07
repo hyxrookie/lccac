@@ -40,7 +40,7 @@ episode_rewards = 0
 ego_run_dir = r"D:\2023\lc\lcCAC\cac\scripts\results\SingleCombat\1v1\NoWeapon\HierarchySelfplay\ppo\v2\my_last"
 # ego_run_dir = r"D:\2023\lc\lcCAC\cac\scripts\results\SingleCombat\1v1\ShootMissile\HierarchySelfplay\ppo\v1\wandb\run-20240927_165046-i2ar26ds\files"
 # enm_run_dir = r"D:/CAC/CloseAirCombat/scripts/results/SingleCombat/1v1/NoWeapon/Selfplay/ppo/Ronew_self_orient_add_range_dyn_reward_pfsp/wandb/run-20250317_125922-l2vkwjgy/files"
-enm_run_dir = r"D:\2023\lc\lcCAC\cac\scripts\results\SingleCombat\1v1\NoWeapon\HierarchySelfplay\ppo\v2\dw_model"
+enm_run_dir = r"D:\2023\lc\lcCAC\cac\scripts\results\SingleCombat\1v1\NoWeapon\HierarchySelfplay\ppo\v2\no_energy"
 # ego_m_run_dir = r"D:\2023\lc\lcCAC\cac\scripts\results\SingleCombat\1v1\ShootMissile\Selfplay\ppo\missile"
 
 
@@ -91,6 +91,10 @@ new_dir = f"{egoname}_vs_{enmname}_{timestamp}"
 os.makedirs(new_dir)
 
 while start != end:
+    ego_policy_index = random.randint(1040, 1240)
+    enm_policy_index = random.randint(1040, 1240)
+    ego_policy.load_state_dict(torch.load(ego_run_dir + f"/actor_{ego_policy_index}.pt"))
+    enm_policy.load_state_dict(torch.load(enm_run_dir + f"/actor_{enm_policy_index}.pt"))
     print(f'这是第{start}回合')
     start += 1
     episode_rewards = 0
@@ -131,7 +135,7 @@ while start != end:
         episode_rewards += rewards
         if render:
             env.render(mode='txt',
-                       filepath=f'{experiment_name}_task_{ego_policy_index}vs{enm_policy_index}_in_({file_name})_version_{start}.txt.acmi')
+                       filepath=f'./{new_dir}/{experiment_name}_task_{ego_policy_index}vs{enm_policy_index}_in_({file_name})_version_{start}.txt.acmi')
         if dones.all():
             for sim in env.agents.values():
                 if sim.uid.__eq__("A0100"):

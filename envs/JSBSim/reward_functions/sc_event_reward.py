@@ -40,4 +40,4 @@ class ScEventDrivenReward(BaseRewardFunction):
         if ego_real_speed <50:
             reward -= 10
 
-        return reward._process(reward,agent_id)
+        return self._process(reward,agent_id)

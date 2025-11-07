@@ -11,7 +11,7 @@ class ScVelocityReward(BaseRewardFunction):
 
     def get_reward(self, task, env, agent_id):
         ego_real_speed = env.agents[agent_id].get_property_value(c.velocities_vt_fps)
-        V_0 = task.optimal_air_combat_speed
+        V_0 = 270
         reward = math.exp(-(ego_real_speed-V_0)/V_0)
         return self._process(reward,agent_id)
 

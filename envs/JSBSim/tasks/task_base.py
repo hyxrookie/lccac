@@ -83,6 +83,7 @@ class BaseTask(ABC):
                 info(dict): additional info
         """
         rewards = 0.0
+
         for reward_function in self.reward_functions:
             reward = reward_function.get_reward(self, env, agent_id)
             rewards += reward

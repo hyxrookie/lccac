@@ -28,3 +28,8 @@ from .A_height_reward import HeightReward
 from .bxy_altitude_reward import BxyAltitudeReward
 from .bxy_posture_reward import BxyPostureReward
 from .bxy_event_driven_reward import BxyEventDrivenReward
+from .qs_attack_angle_reward import QsAttackAngelReward
+from .qs_height_reward import QsHeightReward
+from .qs_event_reward import QsEventDrivenReward
+from .qs_distance_reward import QsDistanceReward
+from .qs_dogde_angle_reward import QsDodgeAngelReward
